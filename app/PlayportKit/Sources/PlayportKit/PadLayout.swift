@@ -10,7 +10,7 @@
 import Foundation
 
 /// A control of the pad, the face buttons and the d-pad each as one.
-public enum PadControl: String, Codable, CaseIterable, Sendable {
+public enum VirtualPadControl: String, Codable, CaseIterable, Sendable {
     case leftTrigger = "lt", leftBumper = "lb", rightBumper = "rb", rightTrigger = "rt"
     case back, home, start
     case leftStick, rightStick, dpad, face
@@ -52,7 +52,7 @@ public struct PadLayout: Codable, Equatable, Identifiable, Sendable {
     public var name: String
     /// A light tap of the phone's haptics as a control goes down.
     public var haptics: Bool
-    /// By PadControl raw value; a control missing here sits where the preset puts it.
+    /// By VirtualPadControl raw value; a control missing here sits where the preset puts it.
     public var placements: [String: PadPlacement]
     /// The preset its missing controls come from.
     public var base: Preset
@@ -81,7 +81,7 @@ public struct PadLayout: Codable, Equatable, Identifiable, Sendable {
         self.placements = Self.placements(preset)
     }
 
-    public subscript(_ c: PadControl) -> PadPlacement {
+    public subscript(_ c: VirtualPadControl) -> PadPlacement {
         get { placements[c.rawValue] ?? Self.placements(base)[c.rawValue]! }
         set {
             var p = newValue
@@ -104,7 +104,7 @@ public struct PadLayout: Codable, Equatable, Identifiable, Sendable {
     /// PlayStation's swaps the left stick and the d-pad.
     public static func placements(_ preset: Preset) -> [String: PadPlacement] {
         let shoulder = 35.0 / 470, middle = 110.0 / 470, upper = 0.44, lower = 0.76
-        var p: [PadControl: PadPlacement] = [
+        var p: [VirtualPadControl: PadPlacement] = [
             .leftTrigger: PadPlacement(x: 66.0 / 670, y: shoulder),
             .leftBumper: PadPlacement(x: 172.0 / 670, y: shoulder),
             .rightBumper: PadPlacement(x: 498.0 / 670, y: shoulder),

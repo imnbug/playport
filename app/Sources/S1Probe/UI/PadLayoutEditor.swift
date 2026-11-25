@@ -17,7 +17,7 @@ final class PadLayoutEditor: ObservableObject {
 
     /// The layout as edited; nil while the editor is closed.
     @Published var draft: PadLayout?
-    @Published var selected: PadControl?
+    @Published var selected: VirtualPadControl?
     /// A layout not saved yet (Settings' New layout).
     @Published private(set) var isNew = false
     /// Opened from a game's in-game menu: Save as new gives the game the copy.
@@ -160,7 +160,7 @@ struct PadLayoutEditorView: View {
     }
 
     @ViewBuilder
-    private func selectedTools(_ c: PadControl) -> some View {
+    private func selectedTools(_ c: VirtualPadControl) -> some View {
         let place = Binding(get: { draft.wrappedValue[c] }, set: { draft.wrappedValue[c] = $0 })
         Text(c.title).font(.system(size: 15, weight: .semibold))
         HStack {

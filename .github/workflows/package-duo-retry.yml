@@ -1,0 +1,49 @@
+name: Package iPhone Duo IPA from completed runtime
+on:
+  push:
+    branches: [iphone-duo-sdk271-build]
+    paths: ['.github/workflows/package-duo-retry.yml', 'app/**']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  ipa:
+    runs-on: xcode-27
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: phone-resources
+          github-token: ${{ github.token }}
+          run-id: 45545098123
+      - name: Generate project and package device app
+        run: |
+          set -euo pipefail
+          test "$(xcrun --sdk iphoneos --show-sdk-version)" = 27.1
+          tar xzf staged.tgz
+          APP="$PWD/app"
+          export APP
+          sed -n '/^cat > /,/^EOF$/p; /^for n in KosmicKrisp/,/^done$/p' app/Xcode/sync-staged.sh | bash -e
+          brew install xcodegen
+          cd app/Xcode
+          cp Local.xcconfig.example Local.xcconfig
+          xcodegen
+          xcodebuild -project Playport.xcodeproj -scheme Playport -configuration Release -destination generic/platform=iOS -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build
+          product="$RUNNER_TEMP/derived/Build/Products/Release-iphoneos/S1Probe.app"
+          test -d "$product/PlugIns/PlayportJIT.appex"
+          cd "$GITHUB_WORKSPACE"
+          mkdir Payload
+          ditto "$product" Payload/S1Probe.app
+          ditto -c -k --keepParent Payload Playport-Duo-unsigned.ipa
+          unzip -tq Playport-Duo-unsigned.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Playport-Duo-unsigned
+          path: Playport-Duo-unsigned.ipa
+          if-no-files-found: error

@@ -112,9 +112,9 @@ struct GameArea: View {
 struct VirtualPadControls: UIViewRepresentable {
     var layout: PadLayout
     var editing = false
-    var selected: PadControl?
+    var selected: VirtualPadControl?
     var onEdit: ((PadLayout) -> Void)?
-    var onSelect: ((PadControl?) -> Void)?
+    var onSelect: ((VirtualPadControl?) -> Void)?
 
     func makeUIView(context: Context) -> VirtualPadView { VirtualPadView() }
 
@@ -135,9 +135,9 @@ struct VirtualPadControls: UIViewRepresentable {
 final class VirtualPadView: UIView {
     var layout = PadLayouts().defaultLayout { didSet { setNeedsLayout(); setNeedsDisplay() } }
     var editing = false { didSet { if editing != oldValue { reset(); setNeedsDisplay() } } }
-    var selected: PadControl? { didSet { setNeedsDisplay() } }
+    var selected: VirtualPadControl? { didSet { setNeedsDisplay() } }
     var onEdit: ((PadLayout) -> Void)?
-    var onSelect: ((PadControl?) -> Void)?
+    var onSelect: ((VirtualPadControl?) -> Void)?
 
     private struct Stick {
         var center = CGPoint.zero, radius: CGFloat = 0
@@ -155,15 +155,15 @@ final class VirtualPadView: UIView {
     private var left = Stick(), right = Stick()
     private var unit: CGFloat = 1
     /// Where each control is drawn and touched.
-    private var frames: [PadControl: CGRect] = [:]
+    private var frames: [VirtualPadControl: CGRect] = [:]
     /// What each finger not on a stick presses.
-    private var fingers: [UITouch: Set<PadControl>] = [:]
-    private var pressed: Set<PadControl> = []
+    private var fingers: [UITouch: Set<VirtualPadControl>] = [:]
+    private var pressed: Set<VirtualPadControl> = []
     private var facePressed: Set<Face> = []
     /// The d-pad's directions held now.
     private var dpadDirection: (up: Bool, down: Bool, left: Bool, right: Bool) = (false, false, false, false)
     /// Editing: the finger dragging a control, and its offset from the control's centre.
-    private var drag: (touch: UITouch, control: PadControl, offset: CGPoint)?
+    private var drag: (touch: UITouch, control: VirtualPadControl, offset: CGPoint)?
     private let haptic = UIImpactFeedbackGenerator(style: .light)
 
     init() {
@@ -180,13 +180,13 @@ final class VirtualPadView: UIView {
     /// A control's own size is for a 670x470 pt area: shoulders 96x46, Back, Home
     /// and Start 44 across, a stick's radius 78, the d-pad's arm 64, the face
     /// buttons 56 from their centre and 30 in radius.
-    private func scale(_ c: PadControl) -> CGFloat { CGFloat(layout[c].scale) * unit }
+    private func scale(_ c: VirtualPadControl) -> CGFloat { CGFloat(layout[c].scale) * unit }
 
-    private func center(_ c: PadControl) -> CGPoint {
+    private func center(_ c: VirtualPadControl) -> CGPoint {
         CGPoint(x: CGFloat(layout[c].x) * bounds.width, y: CGFloat(layout[c].y) * bounds.height)
     }
 
-    private func frame(_ c: PadControl) -> CGRect {
+    private func frame(_ c: VirtualPadControl) -> CGRect {
         let p = center(c), s = scale(c)
         func box(_ w: CGFloat, _ h: CGFloat) -> CGRect { CGRect(x: p.x - w / 2, y: p.y - h / 2, width: w, height: h) }
         switch c {
@@ -198,13 +198,13 @@ final class VirtualPadView: UIView {
         }
     }
 
-    private func shows(_ c: PadControl) -> Bool { editing || !layout[c].hidden }
+    private func shows(_ c: VirtualPadControl) -> Bool { editing || !layout[c].hidden }
 
     override func layoutSubviews() {
         super.layoutSubviews()
         guard bounds.width > 0, bounds.height > 0 else { return }
         unit = min(bounds.width / 670, bounds.height / 470)
-        frames = Dictionary(uniqueKeysWithValues: PadControl.allCases.map { ($0, frame($0)) })
+        frames = Dictionary(uniqueKeysWithValues: VirtualPadControl.allCases.map { ($0, frame($0)) })
         left.center = center(.leftStick); left.radius = 78 * scale(.leftStick)
         right.center = center(.rightStick); right.radius = 78 * scale(.rightStick)
         setNeedsDisplay()
@@ -293,8 +293,8 @@ final class VirtualPadView: UIView {
 
     /// What a finger at p presses: a button under it, the d-pad or the face
     /// buttons (which of theirs comes from where the finger is, update()).
-    private func controls(at p: CGPoint) -> Set<PadControl> {
-        let buttons: [PadControl] = [.leftTrigger, .leftBumper, .rightBumper, .rightTrigger, .back, .home, .start]
+    private func controls(at p: CGPoint) -> Set<VirtualPadControl> {
+        let buttons: [VirtualPadControl] = [.leftTrigger, .leftBumper, .rightBumper, .rightTrigger, .back, .home, .start]
         for c in buttons where shows(c) && frames[c, default: .null].insetBy(dx: -8, dy: -8).contains(p) { return [c] }
         if shows(.dpad) {
             let o = center(.dpad), arm = 64 * scale(.dpad)
@@ -316,7 +316,7 @@ final class VirtualPadView: UIView {
     }
 
     private func update() {
-        var now: Set<PadControl> = []
+        var now: Set<VirtualPadControl> = []
         var faces: Set<Face> = []
         var dir = (up: false, down: false, left: false, right: false)
         for (t, cs) in fingers {
@@ -363,9 +363,9 @@ final class VirtualPadView: UIView {
     // MARK: editing
 
     /// The control under p, the smallest first (Home over a stick's square).
-    private func control(at p: CGPoint) -> PadControl? {
-        func area(_ c: PadControl) -> CGFloat { frames[c].map { $0.width * $0.height } ?? 0 }
-        return PadControl.allCases.filter { frames[$0, default: .null].insetBy(dx: -6, dy: -6).contains(p) }
+    private func control(at p: CGPoint) -> VirtualPadControl? {
+        func area(_ c: VirtualPadControl) -> CGFloat { frames[c].map { $0.width * $0.height } ?? 0 }
+        return VirtualPadControl.allCases.filter { frames[$0, default: .null].insetBy(dx: -6, dy: -6).contains(p) }
             .min { area($0) < area($1) }
     }
 
@@ -407,7 +407,7 @@ final class VirtualPadView: UIView {
 
     override func draw(_ rect: CGRect) {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
-        for c in PadControl.allCases where shows(c) {
+        for c in VirtualPadControl.allCases where shows(c) {
             ctx.saveGState()
             // Editing, a hidden control is drawn faint so it can be shown again.
             if layout[c].hidden { ctx.setAlpha(0.3) }
@@ -423,7 +423,7 @@ final class VirtualPadView: UIView {
         }
     }
 
-    private func draw(_ c: PadControl) {
+    private func draw(_ c: VirtualPadControl) {
         let s = scale(c), o = center(c)
         switch c {
         case .leftTrigger, .leftBumper, .rightBumper, .rightTrigger:
