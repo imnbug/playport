@@ -1,13 +1,82 @@
 name: Package iPhone Duo IPA from completed runtime
 on:
+  workflow_dispatch:
   push:
     branches: [iphone-duo-sdk271-build]
-    paths: ['.github/workflows/package-duo-retry.yml', 'app/**']
+    paths: ['.github/workflows/package-duo-retry.yml', 'app/**', 'build/stages/fex.sh']
 permissions:
   contents: read
   actions: read
 jobs:
+  fex:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Build FEX without host SVE instructions and verify binary
+        run: |
+          set -euo pipefail
+          trap 'for f in .work/run/fex-*-configure.log .work/run/fex-*-build.log; do [ -f "$f" ] && { echo "=== $f ==="; tail -40 "$f"; }; done' ERR
+          command -v ninja cmake xz >/dev/null || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build cmake xz-utils)
+          git config --global user.name "build-from-pins"
+          git config --global user.email "build@localhost"
+          bash build/docker/llvm-mingw.sh "$PWD/.work/inputs/llvm-mingw"
+          export PLAYPORT_REPO="$PWD"
+          export PLAYPORT_BUILD="$PWD/.work"
+          export LLVM_MINGW="$PWD/.work/inputs/llvm-mingw"
+          bash build/stages/fex.sh "$PWD/.work/run"
+          echo "=== Verify FEX compile flags in build.ninja ==="
+          grep -m 5 'FLAGS =' .work/run/fex/build-arm64ec/build.ninja || true
+          if grep -qE -- '-mcpu=(native|neoverse)' .work/run/fex/build-arm64ec/build.ninja .work/run/fex/build-wow64/build.ninja; then
+            echo "ERROR: host CPU tuning leaked into FEX build.ninja!" >&2
+            exit 1
+          fi
+          mkdir -p fex-out
+          cp .work/run/fex/build-arm64ec/Bin/libarm64ecfex.dll fex-out/xtajit64.dll
+          cp .work/run/fex/build-wow64/Bin/libwow64fex.dll fex-out/xtajit.dll
+          python3 - <<'PY'
+          import struct, hashlib, pathlib, sys
+          for name in ("xtajit64.dll", "xtajit.dll"):
+              p = pathlib.Path("fex-out") / name
+              b = p.read_bytes()
+              pe = struct.unpack_from("<I", b, 0x3C)[0]
+              nsec = struct.unpack_from("<H", b, pe + 6)[0]
+              optsz = struct.unpack_from("<H", b, pe + 20)[0]
+              sectab = pe + 24 + optsz
+              hits = []
+              for i in range(nsec):
+                  sh = sectab + i * 40
+                  sname = b[sh:sh+8].rstrip(b"\0").decode("ascii", "replace")
+                  rawsz, rawptr = struct.unpack_from("<II", b, sh + 16)
+                  chars = struct.unpack_from("<I", b, sh + 36)[0]
+                  if (chars & 0x20000020) and sname in (".text", ".arm64x"):
+                      end = min(len(b) - 4, rawptr + rawsz)
+                      for off in range(rawptr, end + 1, 4):
+                          w = struct.unpack_from("<I", b, off)[0]
+                          if ((w & 0xFF20FC00) == 0x04204C00 or
+                              (w & 0xFF3FE010) == 0x2518E000 or
+                              (w & 0xFF20FC00) == 0x0420E000 or
+                              w == 0x04E84D20):
+                              hits.append(f"0x{w:08x}@0x{off:x}")
+              digest = hashlib.sha256(b).hexdigest()
+              print(f"{name}: {len(b)} bytes, sha256={digest}, SVE_hits={len(hits)}")
+              if hits:
+                  print(f"FATAL: SVE instructions still present in {name}: {hits[:10]}", file=sys.stderr)
+                  sys.exit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fex-nosve
+          path: fex-out/*.dll
+          retention-days: 2
+          if-no-files-found: error
+
   ipa:
+    needs: fex
     runs-on: xcode-27
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
@@ -22,11 +91,37 @@ jobs:
           name: phone-resources
           github-token: ${{ github.token }}
           run-id: 45545098123
-      - name: Generate project and package device app
+      - uses: actions/download-artifact@v4
+        with:
+          name: fex-nosve
+          path: fex-nosve
+      - name: Generate project, build and verify device IPA
         run: |
           set -euo pipefail
           test "$(xcrun --sdk iphoneos --show-sdk-version)" = 27.1
           tar xzf staged.tgz
+          cp -f fex-nosve/xtajit64.dll app/Sources/S1Probe/Runtime/arm64ec-windows/xtajit64.dll
+          cp -f fex-nosve/xtajit.dll app/Sources/S1Probe/Runtime/aarch64-windows/xtajit.dll
+          python3 - <<'PY'
+          import hashlib, pathlib
+          rt_tsv = pathlib.Path("app/Sources/S1Probe/Runtime/artifacts.tsv")
+          updates = {
+              "Runtime/arm64ec-windows/xtajit64.dll": pathlib.Path("app/Sources/S1Probe/Runtime/arm64ec-windows/xtajit64.dll"),
+              "Runtime/aarch64-windows/xtajit.dll": pathlib.Path("app/Sources/S1Probe/Runtime/aarch64-windows/xtajit.dll"),
+          }
+          out_lines = []
+          for line in rt_tsv.read_text().splitlines():
+              cols = line.split("\t")
+              if len(cols) >= 4 and cols[0] == "resource" and cols[1] in updates:
+                  p = updates[cols[1]]
+                  b = p.read_bytes()
+                  cols[2] = str(len(b))
+                  cols[3] = hashlib.sha256(b).hexdigest()
+                  print(f"Updated manifest row: {cols[1]} -> {cols[2]} bytes, {cols[3]}")
+                  line = "\t".join(cols)
+              out_lines.append(line)
+          rt_tsv.write_text("\n".join(out_lines) + "\n")
+          PY
           APP="$PWD/app"
           export APP
           sed -n '/^cat > /,/^EOF$/p; /^for n in KosmicKrisp/,/^done$/p' app/Xcode/sync-staged.sh | bash -e
@@ -41,6 +136,62 @@ jobs:
           mkdir Payload
           ditto "$product" Payload/S1Probe.app
           app_bundle=Payload/S1Probe.app
+          python3 - <<'PY'
+          import hashlib, pathlib, struct, sys
+          app = pathlib.Path("Payload/S1Probe.app")
+          # 1. Verify mandatory new runtime directories exist
+          for must in (
+              "vulkan-loader/arm64ec-windows/vulkan-1.dll",
+              "vulkan-loader/arm64ec-windows/winevulkan.json",
+              "vulkan-loader/aarch64-windows/vulkan-1.dll",
+              "vulkan-loader/aarch64-windows/winevulkan.json",
+              "steamclient/x86_64-windows/steamclient64.dll",
+              "steamclient/i386-windows/steamclient.dll",
+          ):
+              if not (app / must).is_file():
+                  print(f"FATAL: missing required runtime file in app bundle: {must}", file=sys.stderr)
+                  sys.exit(1)
+          # 2. Verify every single resource row in bundled artifacts.tsv matches byte-for-byte
+          tsv = (app / "artifacts.tsv").read_text().splitlines()
+          rows = [l.split("\t") for l in tsv if l and not l.startswith("#")]
+          res_rows = [r for r in rows if r[0] == "resource"]
+          missing_or_bad = []
+          for r in res_rows:
+              rel = r[1].removeprefix("Runtime/")
+              fp = app / rel
+              if not fp.is_file():
+                  missing_or_bad.append(f"MISSING:{rel}")
+              else:
+                  data = fp.read_bytes()
+                  if len(data) != int(r[2]) or hashlib.sha256(data).hexdigest() != r[3]:
+                      missing_or_bad.append(f"MISMATCH:{rel}")
+          if missing_or_bad:
+              print(f"FATAL: {len(missing_or_bad)} resource verification failures: {missing_or_bad[:10]}", file=sys.stderr)
+              sys.exit(1)
+          print(f"Verified all {len(res_rows)} bundled runtime resources against artifacts.tsv (0 missing, 0 mismatched).")
+          # 3. Final SVE zero-hit check on bundled FEX DLLs
+          for rel in ("arm64ec-windows/xtajit64.dll", "aarch64-windows/xtajit.dll"):
+              b = (app / rel).read_bytes()
+              pe = struct.unpack_from("<I", b, 0x3C)[0]
+              nsec = struct.unpack_from("<H", b, pe + 6)[0]
+              optsz = struct.unpack_from("<H", b, pe + 20)[0]
+              sectab = pe + 24 + optsz
+              for i in range(nsec):
+                  sh = sectab + i * 40
+                  sname = b[sh:sh+8].rstrip(b"\0").decode("ascii", "replace")
+                  rawsz, rawptr = struct.unpack_from("<II", b, sh + 16)
+                  chars = struct.unpack_from("<I", b, sh + 36)[0]
+                  if (chars & 0x20000020) and sname in (".text", ".arm64x"):
+                      for off in range(rawptr, min(len(b) - 4, rawptr + rawsz) + 1, 4):
+                          w = struct.unpack_from("<I", b, off)[0]
+                          if ((w & 0xFF20FC00) == 0x04204C00 or
+                              (w & 0xFF3FE010) == 0x2518E000 or
+                              (w & 0xFF20FC00) == 0x0420E000 or
+                              w == 0x04E84D20):
+                              print(f"FATAL: SVE word 0x{w:08x} found in bundled {rel}", file=sys.stderr)
+                              sys.exit(1)
+          print("Verified bundled xtajit64.dll and xtajit.dll contain 0 SVE instructions.")
+          PY
           find "$app_bundle" -depth \( -name '*.framework' -o -name '*.appex' -o -name '*.dylib' \) -print0 |
             while IFS= read -r -d '' component; do
               codesign --force --sign - "$component"
@@ -49,10 +200,10 @@ jobs:
           codesign --verify --deep --strict "$app_bundle"
           codesign -d --xml --entitlements "$RUNNER_TEMP/duo-entitlements.plist" "$app_bundle"
           test "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.developer.kernel.increased-memory-limit' "$RUNNER_TEMP/duo-entitlements.plist")" = true
-          ditto -c -k --keepParent Payload Playport-Duo-memory-request.ipa
-          unzip -tq Playport-Duo-memory-request.ipa
+          ditto -c -k --keepParent Payload Playport-Duo-sdk27.1-fixed.ipa
+          unzip -tq Playport-Duo-sdk27.1-fixed.ipa
       - uses: actions/upload-artifact@v4
         with:
-          name: Playport-Duo-memory-request
-          path: Playport-Duo-memory-request.ipa
+          name: Playport-Duo-sdk27.1-fixed
+          path: Playport-Duo-sdk27.1-fixed.ipa
           if-no-files-found: error

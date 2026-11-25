@@ -71,7 +71,13 @@ targets:
       - path: ../Sources/S1Probe/Runtime/vulkan
         type: folder
         buildPhase: resources
+      - path: ../Sources/S1Probe/Runtime/vulkan-loader
+        type: folder
+        buildPhase: resources
       - path: ../Sources/S1Probe/Runtime/steamapi
+        type: folder
+        buildPhase: resources
+      - path: ../Sources/S1Probe/Runtime/steamclient
         type: folder
         buildPhase: resources
       - path: ../Sources/S1Probe/Runtime/artifacts.tsv

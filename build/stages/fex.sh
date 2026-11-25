@@ -59,6 +59,7 @@ ensure_series "$F/External/rpmalloc" "rpmalloc-port rpmalloc" "$RPM"
 
 # -stdlib=libc++ is mandatory: the -gnu driver default (-lstdc++) does not
 # exist in llvm-mingw. FEX_IOS_HOST selects the iOS host-process code paths.
+# The PE modules execute on iPhone, so do not tune them for the build runner.
 # MAP takes the tree and llvm-mingw out of __FILE__ and the debug info.
 MAP="-ffile-prefix-map=$F=fex -ffile-prefix-map=$M=llvm-mingw"
 # Reproducible: the [build-id] line's __DATE__/__TIME__ (Module.cpp) take the
@@ -89,7 +90,7 @@ cmake -S "$F" -B "$F/build-$mode" -G Ninja \
     -DCMAKE_CXX_FLAGS="$ios_flags -fuse-ld=lld -stdlib=libc++ $MAP" \
     -DCMAKE_ASM_FLAGS="$ios_flags" \
     -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -Wl,--no-insert-timestamp" \
-    -DFEX_IOS_HOST_BUILD=ON -DENABLE_LTO=FALSE -DCMAKE_BUILD_TYPE=Release \
+    -DFEX_IOS_HOST_BUILD=ON -DTUNE_CPU=none -DTUNE_ARCH=generic -DENABLE_LTO=FALSE -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_TESTING=OFF -DBUILD_FEXCONFIG=OFF \
     > "$ROOT/fex-$mode-configure.log"
 # Build the module only: the aarch64 configuration also defines host tools.
