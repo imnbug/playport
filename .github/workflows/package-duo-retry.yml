@@ -40,10 +40,19 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           mkdir Payload
           ditto "$product" Payload/S1Probe.app
-          ditto -c -k --keepParent Payload Playport-Duo-unsigned.ipa
-          unzip -tq Playport-Duo-unsigned.ipa
+          app_bundle=Payload/S1Probe.app
+          find "$app_bundle" -depth \( -name '*.framework' -o -name '*.appex' -o -name '*.dylib' \) -print0 |
+            while IFS= read -r -d '' component; do
+              codesign --force --sign - "$component"
+            done
+          codesign --force --sign - --generate-entitlement-der --entitlements app/S1Probe.entitlements "$app_bundle"
+          codesign --verify --deep --strict "$app_bundle"
+          codesign -d --entitlements - "$app_bundle" > "$RUNNER_TEMP/duo-entitlements.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.developer.kernel.increased-memory-limit' "$RUNNER_TEMP/duo-entitlements.plist")" = true
+          ditto -c -k --keepParent Payload Playport-Duo-memory-request.ipa
+          unzip -tq Playport-Duo-memory-request.ipa
       - uses: actions/upload-artifact@v4
         with:
-          name: Playport-Duo-unsigned
-          path: Playport-Duo-unsigned.ipa
+          name: Playport-Duo-memory-request
+          path: Playport-Duo-memory-request.ipa
           if-no-files-found: error
