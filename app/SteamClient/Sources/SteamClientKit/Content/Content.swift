@@ -45,13 +45,65 @@ public struct ContentClient: Sendable {
         let body = try await cm().serviceCall("ContentServerDirectory.GetServersForSteamPipe#1",
                                               GetServersForSteamPipeRequest(cellID: cell), authed: true)
         let all = try GetServersForSteamPipeResponse.decode(body).servers
-        let usable = all.filter { s in
-            (s.type == "SteamCache" || s.type == "CDN")
-                && (s.allowedAppIDs.isEmpty || s.allowedAppIDs.contains(appID))
-                && s.httpsSupport != "unavailable"
+        let usable = Self.usableServers(all, appID: appID)
+        guard usable.isEmpty else { return usable }
+
+        log.warn("cdn", "no eligible Steam CM content servers for app \(appID), cell \(cell), returned \(all.count); trying the public directory")
+        let url = URL(string: "https://api.steampowered.com/IContentServerDirectoryService/GetServersForSteamPipe/v1/?cell_id=0&max_servers=20")!
+        let data = try await http.get(url, maxBytes: 1 << 20, label: "Steam public content directory")
+        let directory = try JSONDecoder().decode(PublicContentDirectory.self, from: Data(data))
+        let publicServers = directory.response.servers.compactMap { entry -> GetServersForSteamPipeResponse.Server? in
+            guard Self.isSteamContentHost(entry.host), Self.isSteamContentHost(entry.vhost ?? entry.host) else { return nil }
+            return .init(type: entry.type, sourceID: nil, cellID: nil, load: nil,
+                         weightedLoad: entry.weightedLoad, host: entry.host, vhost: entry.vhost ?? entry.host,
+                         httpsSupport: entry.httpsSupport, allowedAppIDs: entry.allowedAppIDs ?? [],
+                         priorityClass: entry.priorityClass)
+        }
+        let fallback = Self.usableServers(publicServers, appID: appID)
+        guard !fallback.isEmpty else {
+            throw SteamError.notFound("no HTTPS content server for app \(appID) (Steam CM: \(all.count), public directory: \(directory.response.servers.count))")
+        }
+        return fallback
+    }
+
+    private static func usableServers(_ servers: [GetServersForSteamPipeResponse.Server], appID: UInt32)
+        -> [GetServersForSteamPipeResponse.Server] {
+        servers.filter { server in
+            (server.type == "SteamCache" || server.type == "CDN")
+                && (server.allowedAppIDs.isEmpty || server.allowedAppIDs.contains(appID))
+                && server.httpsSupport != "unavailable"
         }.sorted { ($0.priorityClass ?? 0, $0.weightedLoad ?? 0) < ($1.priorityClass ?? 0, $1.weightedLoad ?? 0) }
-        guard !usable.isEmpty else { throw SteamError.notFound("no HTTPS content server for app \(appID)") }
-        return usable
+    }
+
+    private static func isSteamContentHost(_ host: String) -> Bool {
+        host.lowercased().hasSuffix(".steamcontent.com") &&
+            host.utf8.allSatisfy { (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || $0 == 45 || $0 == 46 }
+    }
+
+    private struct PublicContentDirectory: Decodable {
+        struct Response: Decodable {
+            struct Server: Decodable {
+                let type: String
+                let host: String
+                let vhost: String?
+                let weightedLoad: Float?
+                let httpsSupport: String?
+                let allowedAppIDs: [UInt32]?
+                let priorityClass: UInt32?
+
+                enum CodingKeys: String, CodingKey {
+                    case type, host, vhost
+                    case weightedLoad = "weighted_load"
+                    case httpsSupport = "https_support"
+                    case allowedAppIDs = "allowed_app_ids"
+                    case priorityClass = "priority_class"
+                }
+            }
+
+            let servers: [Server]
+        }
+
+        let response: Response
     }
 
     public static let maxManifestDownload = 64 << 20
