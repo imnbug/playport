@@ -1529,6 +1529,10 @@ final class SettingsModelTests: XCTestCase {
         XCTAssertEqual(SettingsSection.all(developer: true).last, .developer)
         XCTAssertEqual(SettingsSection.all(developer: true).suffix(2), [.launchers, .developer])
         XCTAssertEqual(SettingsSection.named("launchers"), .launchers)
+        XCTAssertEqual(SettingsSection.all(developer: false, foldable: true).map(\.title),
+                       ["Accounts", "Graphics", "Downloads", "Controls", "Virtual gamepad", "Storage", "Setup check", "About"])
+        XCTAssertEqual(SettingsSection.controls.step(1, developer: false), .storage)
+        XCTAssertEqual(SettingsSection.controls.step(1, developer: false, foldable: true), .virtualPad)
         XCTAssertEqual(SettingsSection.named("account"), .accounts)
         XCTAssertEqual(SettingsSection.named("steam"), .accounts)
         XCTAssertEqual(SettingsSection.named("diagnostics"), .developer)
@@ -2168,11 +2172,21 @@ final class QuickMenuTests: XCTestCase {
         XCTAssertEqual(m.ring, .quit)
         m.move(down: false)
         XCTAssertEqual(m.ring, .controller)
-        XCTAssertEqual(QuickMenu.steps(from: .resume, to: .quit), [true, true, true, true, true, true, true])
-        XCTAssertEqual(QuickMenu.steps(from: .overlay, to: .resume), [false, false, false, false, false])
-        XCTAssertEqual(QuickMenu.steps(from: .controls, to: .keyboard), [true])
-        XCTAssertEqual(QuickMenu.steps(from: .keyboard, to: .text), [true])
-        XCTAssertEqual(QuickMenu.steps(from: .quit, to: .quit), [])
+        func steps(from: QuickMenuItem, to: QuickMenuItem) -> [Bool]? {
+            var menu = QuickMenu()
+            menu.ring(from)
+            return menu.steps(to: to)
+        }
+        XCTAssertEqual(steps(from: .resume, to: .quit), [true, true, true, true, true, true, true])
+        XCTAssertEqual(steps(from: .overlay, to: .resume), [false, false, false, false, false])
+        XCTAssertEqual(steps(from: .controls, to: .keyboard), [true])
+        XCTAssertEqual(steps(from: .keyboard, to: .text), [true])
+        XCTAssertEqual(steps(from: .quit, to: .quit), [])
+        // The virtual gamepad's rows come after the overlay.
+        var p = QuickMenu(virtualPad: true)
+        for _ in 0..<6 { p.move(down: true) }
+        XCTAssertEqual(p.ring, .padLayout)
+        XCTAssertNil(QuickMenu().steps(to: .padLayout))
     }
 
     func testWhatTheRowsSay() {
@@ -2184,11 +2198,11 @@ final class QuickMenuTests: XCTestCase {
         // The dev build's scripted pad is no GameController pad: no name of its own (touch controls 3c).
         XCTAssertEqual(QuickMenu.controller(name: nil, battery: nil, scriptedPad: true), "Scripted pad")
         XCTAssertEqual(QuickMenu.controller(name: "DualSense", battery: 70, scriptedPad: true), "DualSense · 70%")
-        XCTAssertEqual(QuickMenuItem.allCases.map(\.title),
+        XCTAssertEqual(QuickMenu().items.map(\.title),
                        ["Resume", "Controls", "Touch keyboard", "Type text", "Screenshot", "Performance overlay", "Controller",
                         "Quit game"])
         // The driver's menu:ROW names (tools/ui.py ACTION_RE).
-        XCTAssertEqual(QuickMenuItem.allCases.map(\.rawValue),
+        XCTAssertEqual(QuickMenu().items.map(\.rawValue),
                        ["resume", "controls", "keyboard", "text", "screenshot", "overlay", "controller", "quit"])
     }
 
@@ -2335,5 +2349,49 @@ final class LicencesTests: XCTestCase {
     func testParagraphsSplitAtBlankLines() {
         XCTAssertEqual(Licences.paragraphs("a\nb\n\n  \nc\r\n\r\nd"), ["a\nb", "c", "d"])
         XCTAssertEqual(Licences.paragraphs("\n\n"), [])
+    }
+}
+
+final class PadLayoutTests: XCTestCase {
+    func testAPhoneStartsWithXboxsAndPlayStationsLayouts() {
+        let all = PadLayouts()
+        XCTAssertEqual(all.layouts.map(\.name), ["Xbox", "PlayStation"])
+        XCTAssertEqual(all.defaultLayout.id, "xbox")
+        // PlayStation's has the d-pad where Xbox's has the left stick.
+        let xbox = all.layout("xbox"), ps = all.layout("playstation")
+        XCTAssertEqual(ps[.dpad].x, xbox[.leftStick].x)
+        XCTAssertEqual(ps[.dpad].y, xbox[.leftStick].y)
+        XCTAssertEqual(all.layout("gone").id, "xbox")
+        XCTAssertEqual(all.layout(nil).id, "xbox")
+    }
+
+    func testAPlacementStaysInsideTheAreaAndHomeStaysShown() {
+        var l = PadLayout(id: "a", name: "A", preset: .xbox)
+        l[.face] = PadPlacement(x: 1.4, y: -0.2, scale: 5, hidden: true)
+        XCTAssertEqual(l[.face], PadPlacement(x: 1, y: 0, scale: PadLayout.scales.upperBound, hidden: true))
+        l[.home] = PadPlacement(x: 0.5, y: 0.5, hidden: true)
+        XCTAssertFalse(l[.home].hidden)
+        l.reset(to: .playstation)
+        XCTAssertEqual(l.placements, PadLayout.placements(.playstation))
+        XCTAssertEqual(l.name, "A")
+    }
+
+    func testLayoutsAreCopiedRemovedAndCycled() {
+        var all = PadLayouts()
+        let copy = all.duplicate(all.layout("xbox"), id: "c")
+        XCTAssertEqual(copy.name, "Xbox copy")
+        XCTAssertEqual(all.duplicate(all.layout("xbox"), id: "d").name, "Xbox copy 2")
+        XCTAssertEqual(all.next(after: "playstation").id, "c")
+        XCTAssertEqual(all.next(after: "d").id, "xbox")
+        all.makeDefault("c")
+        all.remove("c")
+        XCTAssertEqual(all.defaultID, "xbox")
+        for id in ["playstation", "d"] { all.remove(id) }
+        all.remove("xbox")   // the last one stays
+        XCTAssertEqual(all.layouts.map(\.id), ["xbox"])
+        // Stored and read back; nothing stored is the phone's start.
+        let data = try! JSONEncoder().encode(all)
+        XCTAssertEqual(try JSONDecoder().decode(PadLayouts.self, from: data), all)
+        XCTAssertEqual(try JSONDecoder().decode(PadLayouts.self, from: Data("{}".utf8)), PadLayouts())
     }
 }

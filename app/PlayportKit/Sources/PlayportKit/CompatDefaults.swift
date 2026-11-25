@@ -140,7 +140,9 @@ extension LaunchSettings {
                               graphicsOptions: Self.keyItems(graphicsOptions, over: base.graphicsOptions),
                               windowsServices: windowsServices ?? base.windowsServices,
                               khronosVulkanLoader: khronosVulkanLoader ?? base.khronosVulkanLoader,
-                              endLauncherAfterSignIn: base.endLauncherAfterSignIn)
+                              endLauncherAfterSignIn: base.endLauncherAfterSignIn,
+                              virtualPad: virtualPad ?? base.virtualPad,
+                              virtualPadLayout: virtualPadLayout ?? base.virtualPadLayout)
     }
 
     /// `key=value` items as typed (Runtime keys, Graphics options) over the default's: the

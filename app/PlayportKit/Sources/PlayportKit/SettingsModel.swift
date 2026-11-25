@@ -14,7 +14,10 @@ import Foundation
 
 public enum SettingsSection: String, CaseIterable, Sendable {
     /// Every store's account (Steam, then GOG and Epic Games as they land).
-    case accounts, graphics, downloads, controls, storage, setup, about
+    case accounts, graphics, downloads, controls
+    /// A foldable's only: the virtual gamepad's layouts.
+    case virtualPad
+    case storage, setup, about
     /// Dev builds only until a launcher passes Stage 1 (PLA-616):
     /// each publisher's launcher (PublisherLauncher) with Open.
     case launchers
@@ -27,6 +30,7 @@ public enum SettingsSection: String, CaseIterable, Sendable {
         case .graphics: "Graphics"
         case .downloads: "Downloads"
         case .controls: "Controls"
+        case .virtualPad: "Virtual gamepad"
         case .storage: "Storage"
         case .setup: "Setup check"
         case .about: "About"
@@ -36,8 +40,8 @@ public enum SettingsSection: String, CaseIterable, Sendable {
     }
 
     /// The sections a build shows, top to bottom.
-    public static func all(developer: Bool) -> [SettingsSection] {
-        allCases.filter { developer || ($0 != .developer && $0 != .launchers) }
+    public static func all(developer: Bool, foldable: Bool = false) -> [SettingsSection] {
+        allCases.filter { (developer || ($0 != .developer && $0 != .launchers)) && (foldable || $0 != .virtualPad) }
     }
 
     /// The section `open:settings#NAME` names: a section's own name, or what
@@ -56,8 +60,8 @@ public enum SettingsSection: String, CaseIterable, Sendable {
     }
 
     /// Up (-1) or down (+1) the list, stopping at its ends.
-    public func step(_ by: Int, developer: Bool) -> SettingsSection {
-        let list = Self.all(developer: developer)
+    public func step(_ by: Int, developer: Bool, foldable: Bool = false) -> SettingsSection {
+        let list = Self.all(developer: developer, foldable: foldable)
         guard let i = list.firstIndex(of: self) else { return list[0] }
         return list[max(0, min(list.count - 1, i + by))]
     }

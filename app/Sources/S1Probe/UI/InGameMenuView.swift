@@ -31,6 +31,8 @@
 // Photos; a dev build also keeps a PNG in Documents/Screenshots), Performance
 // overlay (UI/PerformanceOverlay.swift, at once and for every game: the same
 // setting as Settings › Graphics), the
+// virtual gamepad its layout (A takes the next one) and its editor
+// (UI/PadLayoutEditor.swift), the
 // controller with its battery, and Quit game (TitleLaunch.quit: WM_CLOSE to
 // the game's windows, so it saves as when its window is closed, then the
 // restart after the game, decision 0029, returns to Home).
@@ -79,7 +81,7 @@ final class InGameMenu: ObservableObject {
         }
         isOpen = true
         GameTextBar.shared.close()
-        menu = QuickMenu()
+        menu = QuickMenu(virtualPad: VirtualGamepad.shared.enabled)
         overlay = PerformanceOverlay.enabled
         shot = nil
         HostIO.shared.menuOpened()
@@ -93,7 +95,7 @@ final class InGameMenu: ObservableObject {
 
     /// A press from a pad (HostIO) or, in a dev build, the driver.
     func press(_ b: NavButton) {
-        guard isOpen, !quitting else { return }
+        guard isOpen, !quitting, !PadLayoutEditor.shared.isOpen else { return }
         if LayoutEditorSession.shared.isUp(.inGame) {
             LayoutEditorSession.shared.press(b)
             #if !PLAYPORT_RELEASE
@@ -157,6 +159,8 @@ final class InGameMenu: ObservableObject {
             GameTextBar.shared.open()
         case .screenshot: screenshot()
         case .overlay: toggleOverlay()
+        case .padLayout: VirtualGamepad.shared.cycle()
+        case .padEdit: PadLayoutEditor.shared.open(VirtualGamepad.shared.layout.id, fromGame: true)
         case .controller: PadRouter.shared.refreshControllers()
         case .quit: quit()
         }
@@ -273,6 +277,7 @@ final class InGameMenu: ObservableObject {
             PadModal.shared.close()
             editor = false
         }
+        PadLayoutEditor.shared.close()
         isOpen = false
         paused = false
         HostIO.sessionControl(Int(PP_CONTROL_RESUME), "resume")
@@ -447,6 +452,7 @@ struct InGameMenuView: View {
     @ObservedObject private var textBar = GameTextBar.shared
     @ObservedObject private var store = ControlsStore.shared
     @ObservedObject private var layoutEditor = LayoutEditorSession.shared
+    @ObservedObject private var pad = VirtualGamepad.shared
 
     var body: some View {
         let lead = safe.side(44, safe.insets.leading), trail = safe.side(44, safe.insets.trailing)
@@ -460,7 +466,7 @@ struct InGameMenuView: View {
                     .padding(.horizontal, 14)
                 Text(launch.title).font(PP.display(24)).lineLimit(1).minimumScaleFactor(0.6)
                     .padding(.horizontal, 14).padding(.bottom, 10)
-                ForEach(QuickMenuItem.allCases, id: \.self) { item in
+                ForEach(model.menu.items, id: \.self) { item in
                     row(item)
                 }
                 Spacer(minLength: 0)
@@ -553,6 +559,8 @@ struct InGameMenuView: View {
         case .text: return textBar.isOpen ? "Open" : nil
         case .screenshot: return model.shot ?? "Saved to Photos"
         case .overlay: return model.overlay ? "On" : "Off"
+        case .padLayout: return pad.layout.name
+        case .padEdit: return nil
         case .controller:
             // The dev build's scripted pad is no GameController pad, so the router has no name for it (touch controls 3c).
             #if PLAYPORT_RELEASE

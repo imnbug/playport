@@ -70,13 +70,21 @@ public struct LaunchSettings: Codable, Equatable, Sendable {
     /// compatibility default and never from a person's settings, so no saved value, `set:`
     /// or `--settings` reaches it, and no page shows it. Nil is off.
     public var endLauncherAfterSignIn: Bool?
+    /// On a foldable's inner panel held upright (iPhone Duo), the game in the top half
+    /// and an on-screen controller in the bottom one, an XInput pad (per game only);
+    /// nil is off.
+    public var virtualPad: Bool?
+    /// The virtual gamepad's layout (PadLayouts' id, per game only): the default one
+    /// when the option was turned on; nil, or one since deleted, is the default.
+    public var virtualPadLayout: String?
 
     public init(screen: String? = nil, aspect: String? = nil, frameLimit: Int? = nil, graphics: GraphicsBackend? = nil,
                 arguments: String = "", steamAPI: SteamAPISwap.Mode? = nil,
                 cloudSync: Bool? = nil, ordering: MemoryOrdering = MemoryOrdering(), maxInst: Int? = nil,
                 x87Reduced: Bool? = nil, diskCache: Bool? = nil, runtime: String = "", graphicsOptions: String = "",
                 windowsServices: Bool? = nil, khronosVulkanLoader: Bool? = nil,
-                endLauncherAfterSignIn: Bool? = nil) {
+                endLauncherAfterSignIn: Bool? = nil,
+                virtualPad: Bool? = nil, virtualPadLayout: String? = nil) {
         self.screen = screen
         self.aspect = aspect
         self.frameLimit = frameLimit
@@ -93,6 +101,8 @@ public struct LaunchSettings: Codable, Equatable, Sendable {
         self.windowsServices = windowsServices
         self.khronosVulkanLoader = khronosVulkanLoader
         self.endLauncherAfterSignIn = endLauncherAfterSignIn
+        self.virtualPad = virtualPad
+        self.virtualPadLayout = virtualPadLayout
     }
 
     public init(from decoder: Decoder) throws {
@@ -115,6 +125,8 @@ public struct LaunchSettings: Codable, Equatable, Sendable {
         windowsServices = try c.decodeIfPresent(Bool.self, forKey: .windowsServices)
         khronosVulkanLoader = try c.decodeIfPresent(Bool.self, forKey: .khronosVulkanLoader)
         endLauncherAfterSignIn = try c.decodeIfPresent(Bool.self, forKey: .endLauncherAfterSignIn)
+        virtualPad = try c.decodeIfPresent(Bool.self, forKey: .virtualPad)
+        virtualPadLayout = try c.decodeIfPresent(String.self, forKey: .virtualPadLayout)
     }
 
     /// Whether a person set nothing; endLauncherAfterSignIn, which no person sets, does not count.
@@ -124,7 +136,7 @@ public struct LaunchSettings: Codable, Equatable, Sendable {
             && ordering.isEmpty && maxInst == nil && x87Reduced == nil && diskCache == nil
             && runtime.trimmingCharacters(in: .whitespaces).isEmpty
             && graphicsOptions.trimmingCharacters(in: .whitespaces).isEmpty && windowsServices == nil
-            && khronosVulkanLoader == nil
+            && khronosVulkanLoader == nil && virtualPad == nil && virtualPadLayout == nil
     }
 
     /// Arguments as a command line splits them: at spaces, except inside
@@ -295,13 +307,19 @@ public struct LaunchSettings: Codable, Equatable, Sendable {
         public var khronosVulkanLoader: Bool
         /// End the launcher the game's Play starts at the game's sign-in (decision 0130).
         public var endLauncherAfterSignIn: Bool
+        /// The on-screen controller under the game on a foldable's open panel held upright.
+        public var virtualPad: Bool
+        /// Its layout's id; nil for the default.
+        public var virtualPadLayout: String?
 
         public init(screen: String?, aspect: ScreenAspect = .phone, frameLimit: Int, graphics: GraphicsBackend = .default,
                     arguments: [String] = [], steamAPI: SteamAPISwap.Mode = .emulated,
                     ordering: MemoryOrdering = MemoryOrdering(), maxInst: Int? = nil,
                     x87Reduced: Bool? = nil, diskCache: Bool? = nil, runtime: [String: String] = [:],
                     graphicsEnvironment: [String: String] = [:], windowsServices: Bool = false,
-                    khronosVulkanLoader: Bool = false, endLauncherAfterSignIn: Bool = false) {
+                    khronosVulkanLoader: Bool = false, endLauncherAfterSignIn: Bool = false,
+                    virtualPad: Bool = false,
+                    virtualPadLayout: String? = nil) {
             self.screen = screen
             self.aspect = aspect
             self.frameLimit = frameLimit
@@ -317,6 +335,8 @@ public struct LaunchSettings: Codable, Equatable, Sendable {
             self.windowsServices = windowsServices
             self.khronosVulkanLoader = khronosVulkanLoader
             self.endLauncherAfterSignIn = endLauncherAfterSignIn
+            self.virtualPad = virtualPad
+            self.virtualPadLayout = virtualPadLayout
         }
 
         /// PLAYPORT_DLL_OVERLAY for this launch (wine_host.c, dll_overlay.h).
@@ -366,7 +386,8 @@ public struct LaunchSettings: Codable, Equatable, Sendable {
                          graphicsEnvironment: graphicsEnvironment(game?.graphicsOptions ?? "") ?? [:],
                          windowsServices: game?.windowsServices ?? false,
                          khronosVulkanLoader: game?.khronosVulkanLoader ?? false,
-                         endLauncherAfterSignIn: game?.endLauncherAfterSignIn ?? false)
+                         endLauncherAfterSignIn: game?.endLauncherAfterSignIn ?? false,
+                         virtualPad: game?.virtualPad ?? false, virtualPadLayout: game?.virtualPadLayout)
     }
 
     /// The resolutions the pickers offer, the same in every aspect ratio, as screen specs;

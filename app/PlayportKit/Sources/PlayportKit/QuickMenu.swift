@@ -14,7 +14,10 @@
 import Foundation
 
 public enum QuickMenuItem: String, CaseIterable, Sendable {
-    case resume, controls, keyboard, text, screenshot, overlay, controller, quit
+    case resume, controls, keyboard, text, screenshot, overlay
+    /// The virtual gamepad's layout and its editor (a foldable's, S1Probe VirtualGamepad.swift).
+    case padLayout, padEdit
+    case controller, quit
 
     public var title: String {
         switch self {
@@ -24,6 +27,8 @@ public enum QuickMenuItem: String, CaseIterable, Sendable {
         case .text: "Type text"
         case .screenshot: "Screenshot"
         case .overlay: "Performance overlay"
+        case .padLayout: "Gamepad layout"
+        case .padEdit: "Edit gamepad layout"
         case .controller: "Controller"
         case .quit: "Quit game"
         }
@@ -68,8 +73,12 @@ public struct QuickMenu: Equatable, Sendable {
     public private(set) var ring: QuickMenuItem = .resume
     /// The Controls panel's ringed row while it is open; nil while the ring is on the rows.
     public private(set) var panel: QuickMenuControlsRow?
+    /// The rows shown: the gamepad layout's only for a game with the virtual gamepad.
+    public let items: [QuickMenuItem]
 
-    public init() {}
+    public init(virtualPad: Bool = false) {
+        items = QuickMenuItem.allCases.filter { virtualPad || ($0 != .padLayout && $0 != .padEdit) }
+    }
 
     /// Up and down move the ring (in the panel while it is open, along `rows`, the ones shown), stopping at the ends.
     public mutating func move(down: Bool, rows: [QuickMenuControlsRow] = QuickMenuControlsRow.allCases) {
@@ -80,12 +89,13 @@ public struct QuickMenu: Equatable, Sendable {
             if rows.indices.contains(i) { panel = rows[i] }
             return
         }
-        let all = QuickMenuItem.allCases
+        let all = items
         let i = all.firstIndex(of: ring)! + (down ? 1 : -1)
         if all.indices.contains(i) { ring = all[i] }
     }
 
     public mutating func ring(_ item: QuickMenuItem) {
+        guard items.contains(item) else { return }
         ring = item
         if item != .controls { panel = nil }
     }
@@ -99,10 +109,11 @@ public struct QuickMenu: Equatable, Sendable {
     /// B in the panel: the ring goes back to the Controls row.
     public mutating func closePanel() { panel = nil }
 
-    /// The presses that take the ring from `from` to `to` (the driver's `menu:ITEM`): "up" or "down" each.
-    public static func steps(from: QuickMenuItem, to: QuickMenuItem) -> [Bool] {
-        let all = QuickMenuItem.allCases
-        let d = all.firstIndex(of: to)! - all.firstIndex(of: from)!
+    /// The presses that take the ring from where it is to `to` (the driver's `menu:ITEM`):
+    /// "up" or "down" each; nil for a row not shown.
+    public func steps(to: QuickMenuItem) -> [Bool]? {
+        guard let t = items.firstIndex(of: to) else { return nil }
+        let d = t - items.firstIndex(of: ring)!
         return Array(repeating: d > 0, count: abs(d))
     }
 
