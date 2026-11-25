@@ -47,7 +47,7 @@ jobs:
             done
           codesign --force --sign - --generate-entitlement-der --entitlements app/S1Probe.entitlements "$app_bundle"
           codesign --verify --deep --strict "$app_bundle"
-          codesign -d --entitlements "$RUNNER_TEMP/duo-entitlements.plist" "$app_bundle"
+          codesign -d --xml --entitlements "$RUNNER_TEMP/duo-entitlements.plist" "$app_bundle"
           test "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.developer.kernel.increased-memory-limit' "$RUNNER_TEMP/duo-entitlements.plist")" = true
           ditto -c -k --keepParent Payload Playport-Duo-memory-request.ipa
           unzip -tq Playport-Duo-memory-request.ipa
