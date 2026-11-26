@@ -1,0 +1,27 @@
+name: Build LuaJIT 2.1 GC64 lua51.dll (Windows x64)
+on:
+  push:
+    branches: [luajit-gc64-build]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Clone LuaJIT v2.1 and build GC64 lua51.dll with MSVC x64
+        shell: cmd
+        run: |
+          git clone --depth 1 --branch v2.1 https://github.com/LuaJIT/LuaJIT.git luajit
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSDIR=%%i"
+          echo VSDIR=%VSDIR%
+          call "%VSDIR%\VC\Auxiliary\Build\vcvars64.bat"
+          cd luajit\src
+          call msvcbuild.bat gc64
+          if not exist lua51.dll exit /b 1
+          dir lua51.dll
+          dumpbin /headers lua51.dll | findstr /i "machine"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lua51-gc64-win64
+          path: luajit/src/lua51.dll
+          retention-days: 7
+          if-no-files-found: error
