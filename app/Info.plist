@@ -24,6 +24,10 @@
 	</array>
 	<key>CFBundleDisplayName</key>
 	<string>Playport</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<!-- A game keeps the whole panel: no Split View beside another app on a
