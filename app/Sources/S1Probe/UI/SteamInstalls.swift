@@ -25,10 +25,10 @@ final class SteamInstalls: DownloadDriver {
     var layout: InstallLayout { LibraryModel.paths.layout }
 
     var blocker: String? {
-        if !signedIn { return "Waiting for Steam" }
+        if !signedIn { return "正在等待 Steam" }
         let net = NetworkPath.shared
-        if !net.connected { return "Waiting for a connection" }
-        if !net.mayDownload { return "Waiting for Wi-Fi" }
+        if !net.connected { return "正在等待网络连接" }
+        if !net.mayDownload { return "正在等待无线局域网" }
         return nil
     }
 

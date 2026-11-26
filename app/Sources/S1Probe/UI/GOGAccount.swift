@@ -78,7 +78,7 @@ final class GOGAccount: ObservableObject, DownloadDriver {
             await loadGames()
         } catch {
             log.warn("gog", "sign-in failed: \(error)")
-            self.error = InstallCopy.detailed("GOG did not accept the sign-in. Try again.", error)
+            self.error = InstallCopy.detailed("GOG 未接受此次登录，请重试。", error)
         }
     }
 
@@ -88,7 +88,7 @@ final class GOGAccount: ObservableObject, DownloadDriver {
         games = []
         gamesFetchedAt = nil
         try? FileManager.default.removeItem(at: Self.cache)
-        downloads?.holdAll(of: .gog, .stopped("Paused: signed out of GOG."))
+        downloads?.holdAll(of: .gog, .stopped("已暂停：已退出登录 GOG。"))
         log.info("gog", "signed out; the token was deleted (GOG has no revoke endpoint, so it lapses by itself)")
     }
 
@@ -108,7 +108,7 @@ final class GOGAccount: ObservableObject, DownloadDriver {
             state = .signedOut
         } catch {
             log.warn("gog", "library failed: \(error)")
-            self.error = InstallCopy.detailed("GOG can't be reached.", error)
+            self.error = InstallCopy.detailed("无法连接 GOG。", error)
         }
     }
 
@@ -156,10 +156,10 @@ final class GOGAccount: ObservableObject, DownloadDriver {
     }
 
     var blocker: String? {
-        if state != .signedIn { return "Waiting for GOG" }
+        if state != .signedIn { return "正在等待登录 GOG" }
         let net = NetworkPath.shared
-        if !net.connected { return "Waiting for a connection" }
-        if !net.mayDownload { return "Waiting for Wi-Fi" }
+        if !net.connected { return "正在等待网络连接" }
+        if !net.mayDownload { return "正在等待 Wi-Fi" }
         return nil
     }
 
@@ -288,12 +288,12 @@ struct GOGSignInSheet: View {
                 account.signingIn = false
                 Task { await account.signIn(code: code) }
             }
-            .navigationTitle("Sign in to GOG")
+            .navigationTitle("登录 GOG")
             .onAppear { AppDelegate.allowsPortrait = true }
             .onDisappear { AppDelegate.allowsPortrait = false }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { account.signingIn = false } }
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { account.signingIn = false } }
             }
         }
     }
@@ -345,24 +345,24 @@ struct GOGAccountSettings: View {
         PadSectionHeader(text: "GOG")
         switch account.state {
         case .unknown:
-            SettingsInfoRow(id: "gog:status", title: "Checking…", subtitle: nil)
+            SettingsInfoRow(id: "gog:status", title: "正在检查…", subtitle: nil)
         case .signedOut:
-            SettingsInfoRow(id: "gog:status", title: "Not signed in", subtitle: account.error ?? "Your GOG games, installed from GOG's servers.")
-            PadRow(id: "set:gog:signin", title: "Sign in to GOG", subtitle: "On GOG's own sign-in page", accessory: .chevron,
-                   hint: "Sign in") { account.signingIn = true }
+            SettingsInfoRow(id: "gog:status", title: "未登录", subtitle: account.error ?? "从 GOG 服务器下载并安装你的 GOG 游戏。")
+            PadRow(id: "set:gog:signin", title: "登录 GOG", subtitle: "在 GOG 官方登录页面完成验证", accessory: .chevron,
+                   hint: "登录") { account.signingIn = true }
         case .signedIn:
-            SettingsInfoRow(id: "gog:status", title: "Signed in", subtitle: "\(account.games.count) Windows games")
-            PadRow(id: "set:gog:refresh", title: "Refresh library",
-                   subtitle: account.error ?? account.gamesFetchedAt.map { "Fetched " + $0.formatted(.relative(presentation: .named)) },
-                   value: account.loading ? "Asking GOG…" : nil, hint: "Refresh") {
+            SettingsInfoRow(id: "gog:status", title: "已登录", subtitle: "\(account.games.count) 款 Windows 游戏")
+            PadRow(id: "set:gog:refresh", title: "刷新游戏库",
+                   subtitle: account.error ?? account.gamesFetchedAt.map { "获取于 " + $0.formatted(.relative(presentation: .named)) },
+                   value: account.loading ? "正在连接 GOG…" : nil, hint: "刷新") {
                 Task { await account.loadGames() }
             }
-            PadRow(id: "set:gog:signout", title: "Sign out", subtitle: "Installed games stay. GOG has no way to end the session, so it lapses by itself.",
-                   destructive: true, hint: "Sign out") {
+            PadRow(id: "set:gog:signout", title: "退出登录", subtitle: "已安装的游戏会保留。GOG 不支持主动注销会话，令牌将自行过期。",
+                   destructive: true, hint: "退出登录") {
                 PadModal.shared.picker(
-                    title: "Sign out of GOG?", context: "Settings · Accounts",
-                    note: "Installed GOG games stay and still play. Downloads from GOG pause.",
-                    options: [PadOption(id: "keep", label: "Stay signed in"), PadOption(id: "out", label: "Sign out")],
+                    title: "要退出登录 GOG 吗？", context: "设置 · 账号",
+                    note: "已安装的 GOG 游戏仍可保留并正常游玩，正在进行的 GOG 下载将暂停。",
+                    options: [PadOption(id: "keep", label: "保持登录"), PadOption(id: "out", label: "退出登录")],
                     selected: "keep") { if $0 == "out" { Task { await account.signOut() } } }
             }
         }

@@ -117,8 +117,8 @@ struct LaunchersSettings: View {
             let path = installed[l.id] ?? nil
             let read = installed[l.id] != nil
             PadRow(id: "set:launcher-" + l.id, title: l.name,
-                   subtitle: read ? (path == nil ? "Not installed" : "Installed") : "…",
-                   hint: path != nil && !launch.running ? "Open" : "") {
+                   subtitle: read ? (path == nil ? "未安装" : "已安装") : "…",
+                   hint: path != nil && !launch.running ? "打开" : "") {
                 guard path != nil, !launch.running else { return }
                 Task { _ = await LauncherOpen.open(l) }
             }
@@ -128,26 +128,26 @@ struct LaunchersSettings: View {
         ForEach(PublisherLauncher.all) { l in
             let runtime = launchSettings.binding(for: l.titleID)
             let keys = runtime.wrappedValue.runtime.trimmingCharacters(in: .whitespaces)
-            PadRow(id: "set:launcher-" + l.id + "-runtime", title: "Runtime keys",
+            PadRow(id: "set:launcher-" + l.id + "-runtime", title: "运行时参数",
                    subtitle: LaunchSettings.unusedRuntimeKeysNote(keys) ?? l.name,
-                   value: keys.isEmpty ? "None" : keys, accessory: .chevron, changed: !keys.isEmpty, style: .plain,
+                   value: keys.isEmpty ? "无" : keys, accessory: .chevron, changed: !keys.isEmpty, style: .plain,
                    reset: keys.isEmpty ? nil : { runtime.wrappedValue.runtime = "" }) {
-                PadModal.shared.keyboard(title: "Runtime keys", text: runtime.wrappedValue.runtime,
-                                         placeholder: "For example env.FEX_SMCCHECKS=none",
+                PadModal.shared.keyboard(title: "运行时参数", text: runtime.wrappedValue.runtime,
+                                         placeholder: "例如 env.FEX_SMCCHECKS=none",
                                          maxLength: 200) { runtime.wrappedValue.runtime = $0 }
             }
         }
         // Deletes the launcher's own saved window settings file (PublisherLauncher.windowSettingsFile),
         // as the driver's `forget-launcher-window:ID` does (PLA-401).
         ForEach(PublisherLauncher.all.filter { $0.windowSettingsFile != nil }) { l in
-            PadRow(id: "set:launcher-" + l.id + "-forget-window", title: "Forget the launcher's saved window settings",
-                   subtitle: l.name, style: .plain, hint: launch.running ? "" : "Forget") {
+            PadRow(id: "set:launcher-" + l.id + "-forget-window", title: "清除启动器保存的窗口位置设置",
+                   subtitle: l.name, style: .plain, hint: launch.running ? "" : "清除") {
                 guard !launch.running else { return }
                 _ = LauncherOpen.forgetWindowSettings(l)
             }
         }
         #endif
-        SettingsNote(text: "Open starts the launcher by itself, with no game.")
+        SettingsNote(text: "点击「打开」将单独启动该启动器，不运行任何游戏。")
             .task {
                 let prefix = WineHostRuntime.shared.prefixURL
                 for l in PublisherLauncher.all {

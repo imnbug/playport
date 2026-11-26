@@ -57,14 +57,14 @@ public enum JitFailureReason: Equatable, Sendable {
     public var message: String {
         switch self {
         case .helperMissing: Self.helperMissingMessage
-        case .pairingRejected: "This pairing file is not accepted: make a new one."
-        case .downloadFailed: "Could not download the disk image: check the connection."
-        case .developerMode: "Turn on Developer Mode."
-        case .mountFailed: "The disk image did not mount: turn on Developer Mode, or download the disk image again."
+        case .pairingRejected: "此配对文件未被接受，请重新生成。"
+        case .downloadFailed: "无法下载开发者磁盘映像，请检查网络连接。"
+        case .developerMode: "请先开启「开发者模式」。"
+        case .mountFailed: "开发者磁盘映像挂载失败：请开启「开发者模式」，或重新下载磁盘映像。"
         case .other(let short):
-            short.isEmpty ? "Game debugging could not be prepared." : "Game debugging could not be prepared (\(short))."
+            short.isEmpty ? "无法准备游戏调试环境。" : "无法准备游戏调试环境（\(short)）。"
         }
     }
 
-    public static let helperMissingMessage = "The JIT helper is missing: reinstall Playport and keep its app extensions."
+    public static let helperMissingMessage = "缺少 JIT 助手扩展：请重新安装 Playport，并在签名安装时保留其应用扩展（App Extensions）。"
 }

@@ -47,7 +47,7 @@ struct HomeView: View {
                 .frame(width: 250)
             }
             .frame(height: 170)
-            Text("Recent").font(PP.display(17, .semibold)).foregroundStyle(PP.text).openingChrome()
+            Text("最近游玩").font(PP.display(17, .semibold)).foregroundStyle(PP.text).openingChrome()
             recentRow
         }
         .padding(.top, 8)
@@ -63,7 +63,7 @@ struct HomeView: View {
                 Color.clear.overlay { GameArt(appID: t.appID, name: t.name, kind: .hero, titleID: t.id, storeKey: t.key) }.clipped()
                 LinearGradient(colors: [.clear, PP.background.opacity(0.85)], startPoint: .center, endPoint: .bottom)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(t.lastPlayed == nil ? "Ready to play" : "Continue playing")
+                    Text(t.lastPlayed == nil ? "准备就绪" : "继续游玩")
                         .font(.system(size: 12, weight: .semibold)).tracking(1.2).textCase(.uppercase)
                         .foregroundStyle(PP.accent)
                     Text(t.name).font(PP.display(34)).foregroundStyle(PP.text).lineLimit(1).minimumScaleFactor(0.6)
@@ -76,25 +76,25 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: 14))
-            .padItem("hero:\(t.id)", hint: "Open", cornerRadius: 14) { nav.openTitle(t.id) }
+            .padItem("hero:\(t.id)", hint: "打开", cornerRadius: 14) { nav.openTitle(t.id) }
             .openingCard(0, cornerRadius: 14)
         } else {
             VStack(alignment: .leading, spacing: 6) {
-                Text("No games yet").font(PP.display(30)).foregroundStyle(PP.text)
-                Text("Install one from your Steam games in the Library.").font(.system(size: 13)).foregroundStyle(PP.soft)
+                Text("暂无游戏").font(PP.display(30)).foregroundStyle(PP.text)
+                Text("前往游戏库安装你的 Steam 游戏。").font(.system(size: 13)).foregroundStyle(PP.soft)
             }
             .padding(20)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
             .background(PP.surface, in: RoundedRectangle(cornerRadius: 14))
-            .padItem("hero", hint: "Library", cornerRadius: 14) { _ = nav.open("games") }
+            .padItem("hero", hint: "游戏库", cornerRadius: 14) { _ = nav.open("games") }
             .openingCard(0, cornerRadius: 14)
         }
     }
 
     /// `Played 2 hr. ago · 14 h total`
     static func played(_ t: InstalledTitle) -> String? {
-        let when = t.lastPlayed.map { "Played " + $0.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)) }
-        let total = t.playSeconds.map { PlayTime.format($0) + " total" }
+        let when = t.lastPlayed.map { "上次游玩：" + $0.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)) }
+        let total = t.playSeconds.map { "累计 " + PlayTime.format($0) }
         let parts = [when, total].compactMap { $0 }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
@@ -103,7 +103,7 @@ struct HomeView: View {
 
     private var downloadCard: some View {
         let job = installs.order.first
-        return HomeCard(label: job.map { $0.isRunning ? "Downloading" : $0.status } ?? "Downloads") {
+        return HomeCard(label: job.map { $0.isRunning ? "正在下载" : $0.status } ?? "下载") {
             if let job {
                 HStack(alignment: .firstTextBaseline) {
                     Text(job.name).font(PP.display(19)).foregroundStyle(PP.text).lineLimit(1)
@@ -115,26 +115,26 @@ struct HomeView: View {
                 }
                 ProgressBar(fraction: job.fraction ?? 0)
             } else {
-                Text("Nothing downloading").font(.system(size: 13)).foregroundStyle(PP.muted)
+                Text("暂无下载任务").font(.system(size: 13)).foregroundStyle(PP.muted)
             }
         }
-        .padItem("download", hint: "Open") { nav.show(.downloads) }
+        .padItem("download", hint: "打开") { nav.show(.downloads) }
     }
 
     private var nextCard: some View {
         let order = installs.order
-        return HomeCard(label: "Up next") {
+        return HomeCard(label: "接下来") {
             if order.count > 1 {
                 let next = order[1]
                 Text(Self.jobName(next)).font(PP.display(19)).foregroundStyle(PP.text).lineLimit(1)
                 Text(([next.remaining.map(ByteCount.format)].compactMap { $0 }
-                      + [next.phase == .queued ? "starts after \(order[0].name)" : next.status]).joined(separator: " · "))
+                      + [next.phase == .queued ? "将在 \(order[0].name) 完成后开始" : next.status]).joined(separator: " · "))
                     .font(.system(size: 12)).foregroundStyle(PP.muted).lineLimit(1)
             } else {
-                Text("Nothing queued").font(.system(size: 13)).foregroundStyle(PP.muted)
+                Text("暂无排队任务").font(.system(size: 13)).foregroundStyle(PP.muted)
             }
         }
-        .padItem("next", hint: "Open") { nav.show(.downloads) }
+        .padItem("next", hint: "打开") { nav.show(.downloads) }
     }
 
     static func percent(_ f: Double) -> String { "\(Int(f * 100))%" }
@@ -150,9 +150,9 @@ struct HomeView: View {
     static func jobName(_ job: Downloads.Job) -> String {
         switch job.kind {
         case .install: job.name
-        case .update: job.name + " update"
-        case .repair: job.name + " repair"
-        case .import: job.name + " import"
+        case .update: job.name + "（更新）"
+        case .repair: job.name + "（修复）"
+        case .import: job.name + "（导入）"
         }
     }
 
@@ -178,13 +178,13 @@ struct HomeView: View {
                     ForEach(Array(recent.enumerated()), id: \.element.id) { i, entry in
                         tile(entry).openingCard(3 + i, cornerRadius: 10)
                     }
-                    Text("+ Find games")
+                    Text("+ 查找游戏")
                         .font(.system(size: 14, weight: .semibold)).foregroundStyle(PP.muted)
                         .frame(height: 70)
                         .containerRelativeFrame(.horizontal) { w, _ in Self.tileWidth(w) }
                         .background(PP.surface, in: RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(PP.line, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
-                        .padItem("find", hint: "Library", cornerRadius: 10) { _ = nav.open("games") }
+                        .padItem("find", hint: "游戏库", cornerRadius: 10) { _ = nav.open("games") }
                         .openingCard(7, cornerRadius: 10)
                 }
                 // Room for the ring, which draws outside each tile.
@@ -220,7 +220,7 @@ struct HomeView: View {
         .containerRelativeFrame(.horizontal) { w, _ in Self.tileWidth(w) }
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .opacity(entry.installed && job == nil ? 1 : 0.55)
-        .padItem(entry.installed ? "tile:\(entry.id)" : "game:\(entry.appID ?? 0)", hint: "Open", cornerRadius: 10) {
+        .padItem(entry.installed ? "tile:\(entry.id)" : "game:\(entry.appID ?? 0)", hint: "打开", cornerRadius: 10) {
             if entry.installed {
                 nav.openTitle(entry.id)
             } else if let app = entry.appID {

@@ -9,13 +9,13 @@ public enum PointerHint {
     public static func text(from before: (tool: PointerTool?, trackpad: Bool),
                             to after: (tool: PointerTool?, trackpad: Bool)) -> String? {
         if after.trackpad != before.trackpad {
-            return after.trackpad ? "Trackpad: drag to move the pointer, tap to click" : "Tap to click: the pointer goes where you touch"
+            return after.trackpad ? "触控板模式：拖动移动指针，轻点进行点击" : "点按即点模式：手指点按处即为指针位置"
         }
         guard after.tool != before.tool, let tool = after.tool else { return nil }
         return switch tool {
-        case .rightClick: "Right click is on: your next tap right-clicks"
-        case .hover: "Hover is on: your finger moves the pointer without clicking"
-        case .scroll: "Scroll is on: drag to scroll"
+        case .rightClick: "右键已开启：下一次轻点将触发右键点击"
+        case .hover: "悬停已开启：移动手指仅移动指针，不触发点击"
+        case .scroll: "滚轮已开启：拖动屏幕即可滚动"
         case .trackpad: nil
         }
     }

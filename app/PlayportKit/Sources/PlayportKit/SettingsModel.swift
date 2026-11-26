@@ -26,16 +26,16 @@ public enum SettingsSection: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .accounts: "Accounts"
-        case .graphics: "Graphics"
-        case .downloads: "Downloads"
-        case .controls: "Controls"
-        case .virtualPad: "Virtual gamepad"
-        case .storage: "Storage"
-        case .setup: "Setup check"
-        case .about: "About"
-        case .launchers: "Launchers"
-        case .developer: "Developer"
+        case .accounts: "账号"
+        case .graphics: "画面"
+        case .downloads: "下载"
+        case .controls: "操控"
+        case .virtualPad: "虚拟手柄"
+        case .storage: "存储空间"
+        case .setup: "环境检查"
+        case .about: "关于"
+        case .launchers: "启动器"
+        case .developer: "开发者"
         }
     }
 
@@ -92,7 +92,7 @@ public struct SettingSteps<Value: Equatable>: Sendable where Value: Sendable {
 
     /// The row's labels: the default's reads "Default · X".
     public func labels(_ name: (Value) -> String) -> [String] {
-        values.map { $0 == defaultValue ? "Default · " + name($0) : name($0) }
+        values.map { $0 == defaultValue ? "默认 · " + name($0) : name($0) }
     }
 }
 

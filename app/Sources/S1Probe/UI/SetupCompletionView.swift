@@ -11,13 +11,13 @@ struct SetupCompletionView: View {
             VStack(spacing: 18) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 38)).foregroundStyle(PP.ok)
-                Text("You're all set").font(PP.display(30))
-                Text("Choose a game and start playing.")
+                Text("一切准备就绪").font(PP.display(30))
+                Text("选择一款游戏，开始畅玩吧。")
                     .font(.system(size: 15)).foregroundStyle(PP.muted)
                 Button { PadModal.shared.press(.a) } label: {
                     HStack(spacing: 10) {
                         PadGlyph(button: .a, inverted: true)
-                        Text("Continue").font(.system(size: 16, weight: .semibold))
+                        Text("继续").font(.system(size: 16, weight: .semibold))
                     }
                     .foregroundStyle(PP.onAccent)
                     .padding(.vertical, 12)
@@ -26,7 +26,7 @@ struct SetupCompletionView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("setup-continue")
-                PadModalHint(button: .b, label: "Back to steps") { PadModal.shared.press(.b) }
+                PadModalHint(button: .b, label: "返回检查步骤") { PadModal.shared.press(.b) }
             }
             .padding(28)
             .frame(width: 370)

@@ -40,7 +40,7 @@ struct PadRow: View {
     var destructive = false
     var style = PadRowStyle.card
     /// What A does on it, for the footer.
-    var hint = "Choose"
+    var hint = "选择"
     /// Y on the row: its value back to the default (a game's option set for it).
     var reset: (() -> Void)?
     /// Left (-1) and right (+1) step the row's value rather than move the ring (a number row).

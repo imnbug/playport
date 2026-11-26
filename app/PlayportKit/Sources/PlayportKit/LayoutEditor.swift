@@ -48,17 +48,17 @@ public enum NewControl: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .button: "Button"
-        case .stick: "Stick"
-        case .keyStick: "W A S D"
-        case .dpad: "D-pad"
-        case .keyboard: "Touch keyboard"
-        case .lookArea: "Look area"
-        case .pointer: "Pointer"
-        case .rightClick: "Right click"
-        case .hover: "Hover"
-        case .scroll: "Scroll"
-        case .trackpad: "Trackpad"
+        case .button: "按键"
+        case .stick: "摇杆"
+        case .keyStick: "WASD 摇杆"
+        case .dpad: "十字键"
+        case .keyboard: "虚拟键盘"
+        case .lookArea: "视角区域"
+        case .pointer: "触控指针"
+        case .rightClick: "右键"
+        case .hover: "悬停"
+        case .scroll: "滚轮"
+        case .trackpad: "触控板"
         }
     }
 
@@ -204,9 +204,9 @@ public struct LayoutEditor: Equatable, Sendable {
     public func details(_ id: String) -> ControlDetails? {
         guard let c = layout.control(id) else { return nil }
         let slots: [String] = switch c.kind {
-        case .button: ["Presses"]
-        case .stick where c.actions.count == 1: ["Presses"]
-        case .stick, .dpad: ["Up", "Down", "Left", "Right"]
+        case .button: ["触发动作"]
+        case .stick where c.actions.count == 1: ["触发动作"]
+        case .stick, .dpad: ["上", "下", "左", "右"]
         case .lookArea, .pointer, .tool: []
         }
         let f = frame(of: id) ?? TouchRect(x: 0, y: 0, width: 0, height: 0)
@@ -222,7 +222,7 @@ public struct LayoutEditor: Equatable, Sendable {
     public func picker(_ id: String, slot: Int, recent: [InputAction] = []) -> ActionPicker? {
         guard let c = layout.control(id), let accepts = Self.accepts(c, slot: slot) else { return nil }
         let slots = details(id)?.slots ?? []
-        let title = slots.count == 1 ? "What \(c.label) presses" : "What \(c.label) \(slots[slot].lowercased()) presses"
+        let title = slots.count == 1 ? "「\(c.label)」触发的动作" : "「\(c.label)」向\(slots[slot])触发的动作"
         return ActionPicker(title: title, current: c.actions[slot], recent: recent, accepts: accepts)
     }
 
@@ -341,16 +341,16 @@ public struct LayoutEditor: Equatable, Sendable {
                         anchor: .center, x: 0, y: 0, width: 104, height: 104)
         case .dpad:
             let a: [InputAction] = gamepad ? [.pad(.up), .pad(.down), .pad(.left), .pad(.right)] : [key(0x26), key(0x28), key(0x25), key(0x27)]
-            c = Control(id: "dpad", kind: .dpad, actions: a, label: gamepad ? "D-pad" : "Arrows", anchor: .center, x: 0, y: 0,
+            c = Control(id: "dpad", kind: .dpad, actions: a, label: gamepad ? "十字键" : "方向键", anchor: .center, x: 0, y: 0,
                         width: 128, height: 128)
         case .keyboard:
             c = Control(id: "keyboard", actions: [.playport(.keyboard)], label: Self.label(.playport(.keyboard)), anchor: .center,
                         x: 0, y: 0, width: 56, height: 56)
         case .lookArea:
-            c = Control(id: "look", kind: .lookArea, actions: [.mouse(.move)], label: "Look", anchor: .center, x: 0, y: 0,
+            c = Control(id: "look", kind: .lookArea, actions: [.mouse(.move)], label: "视角", anchor: .center, x: 0, y: 0,
                         width: ControlLayout.wholeArea, height: ControlLayout.wholeArea)
         case .pointer:
-            c = Control(id: "pointer", kind: .pointer, actions: [.mouse(.left)], label: "Pointer", anchor: .center, x: 0, y: 0,
+            c = Control(id: "pointer", kind: .pointer, actions: [.mouse(.left)], label: "指针", anchor: .center, x: 0, y: 0,
                         width: ControlLayout.wholeArea, height: ControlLayout.wholeArea)
         case .rightClick, .hover, .scroll, .trackpad:
             c = Control(id: n.rawValue, kind: .tool, actions: [], label: n.title, anchor: .center, x: 0, y: 0, width: 48, height: 48,
@@ -539,7 +539,7 @@ public struct LayoutEditor: Equatable, Sendable {
     static func label(_ a: InputAction) -> String {
         switch a {
         case .pad(let p): ActionText.pad(p)
-        case .playport(.keyboard): "Keys"
+        case .playport(.keyboard): "键盘"
         default: ActionText.name(a)
         }
     }
@@ -583,12 +583,12 @@ extension ControlKind {
     /// The inspector's name for it.
     public var title: String {
         switch self {
-        case .button: "Button"
-        case .stick: "Stick"
-        case .dpad: "D-pad"
-        case .lookArea: "Look area"
-        case .pointer: "Pointer"
-        case .tool: "Tool"
+        case .button: "按键"
+        case .stick: "摇杆"
+        case .dpad: "十字键"
+        case .lookArea: "视角区域"
+        case .pointer: "触控指针"
+        case .tool: "工具"
         }
     }
 }
@@ -604,9 +604,9 @@ extension ControlAnchor {
     /// The inspector's side of the screen: `left side`, `middle`, `right side`.
     public var side: String {
         switch self {
-        case .topLeading, .leading, .bottomLeading: "left side"
-        case .top, .center, .bottom: "middle"
-        case .topTrailing, .trailing, .bottomTrailing: "right side"
+        case .topLeading, .leading, .bottomLeading: "左侧"
+        case .top, .center, .bottom: "中部"
+        case .topTrailing, .trailing, .bottomTrailing: "右侧"
         }
     }
 }

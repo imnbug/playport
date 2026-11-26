@@ -177,7 +177,7 @@ final class LayoutEditorSession: ObservableObject {
     func reset() { editor.reset() }
 
     func add() {
-        PadModal.shared.picker(title: "Add", context: opened?.title, note: "Placed in the middle; drag it where it goes.",
+        PadModal.shared.picker(title: "添加控件", context: opened?.title, note: "新控件将放置在屏幕中央，拖动即可移至目标位置。",
                                options: editor.addable.map { PadOption(id: $0.rawValue, label: $0.title) },
                                selected: nil) { id in
             guard let n = NewControl(rawValue: id) else { return }
@@ -188,10 +188,10 @@ final class LayoutEditorSession: ObservableObject {
     /// The preset to start from: the game's own copy of it when it has one.
     func choosePreset() {
         let copies = opened.map { ControlsStore.shared.game($0.titleID).layouts } ?? [:]
-        PadModal.shared.picker(title: "Start from", context: opened?.title,
-                               note: "Your changes to this one stay until Done; undo brings them back.",
+        PadModal.shared.picker(title: "选择起始预设", context: opened?.title,
+                               note: "点击「完成」前，你对当前布局的修改仍会保留，可通过撤销找回。",
                                options: OnScreenLayout.allCases.filter { $0 != .off }.map {
-                                   PadOption(id: $0.rawValue, label: $0.title, detail: copies[$0] == nil ? nil : "This game's own")
+                                   PadOption(id: $0.rawValue, label: $0.title, detail: copies[$0] == nil ? nil : "此游戏专属修改")
                                },
                                selected: editor.preset.rawValue) { id in
             guard let p = OnScreenLayout(rawValue: id) else { return }
@@ -217,7 +217,7 @@ final class LayoutEditorSession: ObservableObject {
 
     func editLabel() {
         guard let id = editor.selection, let d = editor.details(id) else { return }
-        PadModal.shared.keyboard(title: "Label", text: d.label, maxLength: 16) { text in
+        PadModal.shared.keyboard(title: "标签", text: d.label, maxLength: 16) { text in
             LayoutEditorSession.shared.editor.setLabel(id, text)
         }
     }
@@ -316,7 +316,7 @@ struct LayoutEditorView: View {
             VStack {
                 Spacer()
                 HStack(alignment: .bottom, spacing: 12) {
-                    Text("Drag to move · pinch to resize · snaps to the grid and to other controls")
+                    Text("拖动可移动 · 双指捏合可缩放 · 自动吸附网格与其他控件")
                         .font(.system(size: 11.5)).foregroundStyle(PP.soft).lineLimit(1).minimumScaleFactor(0.8)
                         .padding(.horizontal, 14).padding(.vertical, 7)
                         .background(PP.surface.opacity(0.86), in: Capsule())
@@ -341,14 +341,14 @@ struct LayoutEditorView: View {
     private var bar: some View {
         let e = session.editor
         return HStack(spacing: 4) {
-            barItem("edit:add", "＋ Add", hint: "Add") { session.add() }
-            barItem("edit:preset", e.preset.title + " ▾", hint: "Start from") { session.choosePreset() }
-            barItem("edit:opacity", "Opacity " + ControlsOpacity.label(session.opacity), hint: "Change",
+            barItem("edit:add", "＋ 添加", hint: "添加") { session.add() }
+            barItem("edit:preset", e.preset.title + " ▾", hint: "起始预设") { session.choosePreset() }
+            barItem("edit:opacity", "透明度 " + ControlsOpacity.label(session.opacity), hint: "更改",
                     adjust: { session.stepOpacity(by: $0) }) { session.stepOpacity(by: 1, wrapping: true) }
-            barItem("edit:undo", "↶", hint: "Undo", enabled: e.canUndo) { session.undo() }
-            barItem("edit:redo", "↷", hint: "Redo", enabled: e.canRedo) { session.redo() }
-            barItem("edit:reset", "Reset", hint: "Reset", enabled: e.isEdited) { session.reset() }
-            barItem(LayoutEditorSession.doneID, "Done", hint: "Save", accent: true) { session.done() }
+            barItem("edit:undo", "↶", hint: "撤销", enabled: e.canUndo) { session.undo() }
+            barItem("edit:redo", "↷", hint: "重做", enabled: e.canRedo) { session.redo() }
+            barItem("edit:reset", "重置", hint: "重置", enabled: e.isEdited) { session.reset() }
+            barItem(LayoutEditorSession.doneID, "完成", hint: "保存", accent: true) { session.done() }
         }
         .padding(4)
         .background(PP.surface.opacity(0.92), in: Capsule())
@@ -386,18 +386,18 @@ struct LayoutEditorView: View {
                 }
             }
             ForEach(d.slots.indices, id: \.self) { i in
-                row("edit:slot-\(i)", d.slots[i], value: d.actions[i] + " ›", hint: "Change") { session.pick(slot: i) }
+                row("edit:slot-\(i)", d.slots[i], value: d.actions[i] + " ›", hint: "更改") { session.pick(slot: i) }
             }
-            row("edit:label", "Label", value: d.label, hint: "Edit") { session.editLabel() }
+            row("edit:label", "标签", value: d.label, hint: "编辑") { session.editLabel() }
             if d.movable {
-                row("edit:size", "Size", value: "‹ " + d.size + " ›", hint: "Bigger", adjust: { session.resize(by: $0) }) {
+                row("edit:size", "大小", value: "‹ " + d.size + " ›", hint: "放大", adjust: { session.resize(by: $0) }) {
                     session.resize(by: 1)
                 }
             }
             if let b = d.behaviour { behaviour(b) }
             HStack(spacing: 6) {
-                if d.duplicable { button("edit:duplicate", "Duplicate") { session.duplicate() } }
-                button("edit:remove", "Remove", colour: Color(hex: 0xFF9A8A)) { session.remove() }
+                if d.duplicable { button("edit:duplicate", "复制") { session.duplicate() } }
+                button("edit:remove", "移除", colour: Color(hex: 0xFF9A8A)) { session.remove() }
             }
         }
         .padding(14)
@@ -426,7 +426,8 @@ struct LayoutEditorView: View {
     private func behaviour(_ now: TouchBehaviour) -> some View {
         HStack(spacing: 2) {
             ForEach(TouchBehaviour.allCases, id: \.self) { b in
-                Text(b.rawValue.capitalized).font(.system(size: 12, weight: .semibold))
+                let label = b.rawValue == "hold" ? "按住" : b.rawValue == "toggle" ? "切换" : b.rawValue == "repeat" ? "连发" : b.rawValue.capitalized
+                Text(label).font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(b == now ? PP.background : PP.muted)
                     .frame(maxWidth: .infinity).padding(.vertical, 6)
                     .background(b == now ? PP.text : .clear, in: RoundedRectangle(cornerRadius: 9))
@@ -439,7 +440,7 @@ struct LayoutEditorView: View {
         .background(PP.background, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(ringed("edit:behaviour") ? PP.accent : PP.line,
                                                            lineWidth: ringed("edit:behaviour") ? 2 : 1))
-        .padItem("edit:behaviour", hint: "Change", cornerRadius: 12, adjust: { session.stepBehaviour(by: $0) }, ring: false) {
+        .padItem("edit:behaviour", hint: "更改", cornerRadius: 12, adjust: { session.stepBehaviour(by: $0) }, ring: false) {
             session.stepBehaviour(by: 1)
         }
     }
@@ -459,15 +460,15 @@ struct LayoutEditorView: View {
         var h: [PadHint] = []
         if s.pad.focus == .panel {
             if let a = focus.hint, !a.isEmpty { h.append(PadHint(button: .a, label: a) { s.press(.a) }) }
-            h.append(PadHint(button: .lb, label: "Control", action: { s.press(.rb) }, also: .rb))
-            h.append(PadHint(button: .b, label: "Back") { s.press(.b) })
+            h.append(PadHint(button: .lb, label: "切换控件", action: { s.press(.rb) }, also: .rb))
+            h.append(PadHint(button: .b, label: "返回") { s.press(.b) })
             return h
         }
-        h.append(PadHint(button: .a, label: s.editor.selection == nil ? "Choose" : "Edit") { s.press(.a) })
-        h.append(PadHint(button: .lb, label: "Control", action: { s.press(.rb) }, also: .rb))
-        h.append(PadHint(button: .x, label: "Add") { s.press(.x) })
-        h.append(PadHint(button: .y, label: "Reset") { s.press(.y) })
-        h.append(PadHint(button: .b, label: "Done") { s.press(.b) })
+        h.append(PadHint(button: .a, label: s.editor.selection == nil ? "选择" : "编辑") { s.press(.a) })
+        h.append(PadHint(button: .lb, label: "切换控件", action: { s.press(.rb) }, also: .rb))
+        h.append(PadHint(button: .x, label: "添加") { s.press(.x) })
+        h.append(PadHint(button: .y, label: "重置") { s.press(.y) })
+        h.append(PadHint(button: .b, label: "完成") { s.press(.b) })
         return h
     }
 }

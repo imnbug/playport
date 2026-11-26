@@ -89,55 +89,55 @@ public enum SetupChecklist {
         switch step {
         case .pairing:
             if !f.jit.usesPairing {
-                return SetupItem(step: step, done: true, title: "JIT from \(f.jit.label)",
+                return SetupItem(step: step, done: true, title: "JIT 来源：\(f.jit.label)",
                                  detail: f.jit == .stikDebug
-                                     ? "Play opens StikDebug, which enables JIT and comes back. Keep it installed."
-                                     : "Play waits for JIT from another app, such as LiveContainer's Launch with JIT, with the universal.js script.",
+                                     ? "点击「开始游戏」会自动打开 StikDebug 启用 JIT 并返回，请保持该应用已安装。"
+                                     : "点击「开始游戏」后会等待其他应用（如 LiveContainer 的「使用 JIT 启动」）配合 universal.js 脚本启用 JIT。",
                                  action: nil)
             }
             if f.pairsOnPhone {
-                return SetupItem(step: step, done: f.pairing, title: "Pairing",
-                                 detail: f.pairing ? "This iPhone is paired with itself, so games run fast."
-                                     : "Games need JIT, and pairing lets Playport turn it on by itself. Made on this iPhone; iOS asks you to approve it.",
-                                 action: f.pairing ? "Pair again" : "Pair this iPhone")
+                return SetupItem(step: step, done: f.pairing, title: "设备配对",
+                                 detail: f.pairing ? "此 iPhone 已完成本机配对，游戏可全速运行。"
+                                     : "运行游戏需要启用 JIT，设备配对可让 Playport 自动开启 JIT。直接在此 iPhone 上生成，需在 iOS 提示时予以批准。",
+                                 action: f.pairing ? "重新配对" : "配对此 iPhone")
             }
-            return SetupItem(step: step, done: f.pairing, title: "Pairing file",
-                             detail: f.pairing ? "Imported, so games run fast."
-                                 : "Games need JIT, and a pairing file lets Playport turn it on by itself. Made once on a computer; pick it from Files.",
-                             action: f.pairing ? "Choose another file" : "Choose file")
+            return SetupItem(step: step, done: f.pairing, title: "配对文件",
+                             detail: f.pairing ? "已导入配对文件，游戏可全速运行。"
+                                 : "运行游戏需要启用 JIT，配对文件可让 Playport 自动开启 JIT。只需在电脑上生成一次，然后从「文件」中选择导入。",
+                             action: f.pairing ? "更换文件" : "选择文件")
         case .vpn:
             if !f.jit.usesTunnel {
                 return SetupItem(step: step, done: true, title: "LocalDevVPN",
-                                 detail: "Playport does not need it while JIT comes from another app.", action: nil)
+                                 detail: "当 JIT 由其他应用提供时，Playport 无需使用 LocalDevVPN。", action: nil)
             }
             let up = f.tunnelUp == true
             return SetupItem(step: step, done: up, title: "LocalDevVPN",
-                             detail: up ? "Connected. Keep it on while you play."
-                                 : f.tunnelUp == nil ? "Checking…" : "Install it and turn it on. Keep it on while you play.",
-                             action: up ? nil : "Turn it on")
+                             detail: up ? "已连接。游玩期间请保持开启。"
+                                 : f.tunnelUp == nil ? "正在检查…" : "请安装并开启 LocalDevVPN，游玩期间请保持开启。",
+                             action: up ? nil : "开启")
         case .memory:
             let on = f.memoryEntitled == true
             let detail: String
             if on {
-                detail = "Increased Memory Limit is on: games get all the memory this iPhone gives."
+                detail = "「增加内存限制」已开启：游戏可使用此 iPhone 提供的全部可用内存。"
             } else if f.memorySkipped {
-                detail = "Not now. Smaller games play; bigger ones need Increased Memory Limit."
+                detail = "暂不设置。小型游戏可正常运行，大型游戏需要开启「增加内存限制」。"
             } else if f.memoryEntitled == nil {
-                detail = "Playport could not read its signature. Bigger games need Increased Memory Limit."
+                detail = "Playport 无法读取自身签名信息。大型游戏需要开启「增加内存限制」。"
             } else {
-                detail = "This copy was signed without Increased Memory Limit, so bigger games will not start."
+                detail = "当前安装的签名未包含「增加内存限制」权限，大型游戏将无法启动。"
             }
-            return SetupItem(step: step, done: on || f.memorySkipped, title: "Memory", detail: detail,
-                             action: on ? nil : "How to fix")
+            return SetupItem(step: step, done: on || f.memorySkipped, title: "内存", detail: detail,
+                             action: on ? nil : "查看解决方法")
         case .steam:
             let done = f.accountSignedIn == true
             let stores = f.signedInStores
-            let named = stores.count > 1 ? stores.dropLast().joined(separator: ", ") + " and " + stores.last! : stores.first ?? ""
-            return SetupItem(step: step, done: done || f.steamSkipped, title: "Accounts",
-                             detail: done ? "Signed in to \(named): your games, and Steam's cloud saves and achievements."
-                                 : f.steamSkipped ? "Not now. Sign in to Steam, GOG or Epic Games any time in Settings › Accounts, or add games from Files."
-                                 : "Optional. Sign in to Steam, GOG or Epic Games for your games, or add games from Files.",
-                             action: done ? nil : "Sign in")
+            let named = stores.count > 1 ? stores.dropLast().joined(separator: "、") + " 和 " + stores.last! : stores.first ?? ""
+            return SetupItem(step: step, done: done || f.steamSkipped, title: "账号",
+                             detail: done ? "已登录 \(named)：可访问你的游戏库，以及 Steam 云存档与成就。"
+                                 : f.steamSkipped ? "暂不登录。你随时可在「设置 › 账号」中登录 Steam、GOG 或 Epic Games，或从「文件」导入游戏。"
+                                 : "可选步骤。登录 Steam、GOG 或 Epic Games 以获取你的游戏库，或直接从「文件」添加游戏。",
+                             action: done ? nil : "登录")
         }
     }
 
@@ -201,20 +201,20 @@ public enum SetupChecklist {
         guard f.jit.usesPairing else { return .go }
         if !f.pairing {
             return f.pairsOnPhone ? .fixesItself(.pairing)
-                : .needs(.pairing, "Playport needs a pairing file to run games. Choose it from Files on the Pairing file step.")
+                : .needs(.pairing, "Playport 需要配对文件才能运行游戏。请在「配对文件」步骤中从「文件」选择导入。")
         }
         if f.tunnelUp != true { return .fixesItself(.vpn) }
         return .go
     }
 
     /// The launch screen drops it once a controller connects.
-    public static let noController = "No controller connected. Connect one now to play with it."
+    public static let noController = "未连接手柄。现在连接手柄即可使用手柄游玩。"
 
     /// What does not stop a launch but is worth saying on its launch screen.
     public static func notes(_ f: SetupFacts, steamGame: Bool) -> [String] {
         var n: [String] = []
         if f.controller == nil { n.append(noController) }
-        if steamGame, f.steamSignedIn == false { n.append("Steam is signed out: cloud saves and achievements wait until you sign in.") }
+        if steamGame, f.steamSignedIn == false { n.append("未登录 Steam：云存档与成就将在登录后同步。") }
         return n
     }
 

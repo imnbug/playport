@@ -15,7 +15,7 @@ final class JitSetup: ObservableObject {
     enum Phase { case preparing, pairing, vpn, connectingVPN, checking, failed, ready, cancelled }
     @Published private(set) var presented = false
     @Published private(set) var phase = Phase.preparing
-    @Published private(set) var message = "Preparing game debugging…"
+    @Published private(set) var message = "正在准备游戏调试环境…"
     private var visible = false
     private var generation = 0
     private var repair = false
@@ -64,7 +64,7 @@ final class JitSetup: ObservableObject {
         candidate = nil
         visible = false
         phase = .preparing
-        message = "Preparing game debugging…"
+        message = "正在准备游戏调试环境…"
         presented = true
     }
 
@@ -88,18 +88,18 @@ final class JitSetup: ObservableObject {
                 }
                 guard id == generation, presented, UIApplication.shared.applicationState == .active else { return }
                 guard BuiltInJit.hasGetTaskAllow else {
-                    fail("This install cannot enable game debugging. Re-sign Playport with a development signature."); return
+                    fail("当前安装版本无法启用游戏调试。请使用开发者签名重新签名安装 Playport。"); return
                 }
                 if candidate == nil {
                     do { original = try BuiltInJit.storedPairingData() }
-                    catch { fail("The Keychain could not be read. Unlock this iPhone and try again. Your pairing was not replaced."); return }
+                    catch { fail("无法读取系统钥匙串（Keychain）。请解锁此 iPhone 后重试，原有配对记录未被替换。"); return }
                 }
                 if candidate == nil && (original == nil || repair) {
                     phase = .pairing
-                    message = "Pair this iPhone"
+                    message = "配对此 iPhone"
                     OnDevicePairing.shared.start { data, failure in
                         guard id == self.generation, self.presented else { return }
-                        guard let data else { self.fail(failure ?? "Pairing did not complete."); return }
+                        guard let data else { self.fail(failure ?? "设备配对未能完成。"); return }
                         self.candidate = data
                         self.phase = .vpn
                         self.advance()
@@ -112,7 +112,7 @@ final class JitSetup: ObservableObject {
         case .vpn:
             if LocalDevVPN.tunnelUp { checkReadiness(); return }
             phase = .connectingVPN
-            message = "Connecting LocalDevVPN… Allow its VPN configuration if iOS asks."
+            message = "正在连接 LocalDevVPN… 若 iOS 弹出提示，请允许添加其 VPN 配置。"
             let id = generation
             LocalDevVPN.connect { outcome in
                 guard id == self.generation, self.presented else { return }
@@ -121,11 +121,11 @@ final class JitSetup: ObservableObject {
                     self.phase = .vpn
                     self.advance()
                 case .notInstalled:
-                    self.fail("Install LocalDevVPN from the App Store page, open it once to allow its VPN, then return and tap Continue.")
+                    self.fail("请从打开的 App Store 页面安装 LocalDevVPN，打开一次并允许添加 VPN 配置，然后返回此处轻点「继续」。")
                 case .notConnected:
-                    self.fail("LocalDevVPN is not connected. Open it and allow its VPN configuration, then tap Continue.")
+                    self.fail("LocalDevVPN 未连接。请打开该应用并允许其 VPN 配置，然后返回轻点「继续」。")
                 case .late:
-                    self.fail("Welcome back. Tap Continue to finish setting up game debugging.")
+                    self.fail("欢迎回来。请轻点「继续」以完成游戏调试环境设置。")
                 }
             }
         case .ready: finishPresentation()
@@ -145,15 +145,15 @@ final class JitSetup: ObservableObject {
             return
         }
         phase = .checking
-        message = "Preparing game debugging… The disk image downloads and mounts automatically."
+        message = "正在准备游戏调试环境… 开发者磁盘映像将自动下载并挂载。"
         let id = generation
         BuiltInJitStatus.shared.check(pairingFile: candidate, cancelled: cancellation) { status in
             guard id == self.generation, self.presented else { return }
             guard status == "ready" else {
                 self.fail(status == "unreachable"
-                    ? "LocalDevVPN could not be reached. Connect it, then tap Continue."
-                    : (BuiltInJitStatus.shared.failureReason?.message ?? "Game debugging could not be prepared.")
-                        + " Tap Continue to try again.")
+                    ? "无法连接 LocalDevVPN。请先连接该 VPN，然后轻点「继续」。"
+                    : (BuiltInJitStatus.shared.failureReason?.message ?? "无法准备游戏调试环境。")
+                        + " 请轻点「继续」重试。")
                 return
             }
             do {
@@ -170,14 +170,14 @@ final class JitSetup: ObservableObject {
                     self.candidate = nil
                     self.repair = false
                     OnDevicePairing.shared.discardCredentials()
-                    self.fail("Another pairing was saved during setup. Tap Continue to use it; it was not replaced.")
+                    self.fail("设置期间已有另一份配对记录被保存。轻点「继续」即可使用该配对，原有记录未被替换。")
                 } else {
-                    self.fail("The pairing could not be saved. Your existing pairing was not replaced.")
+                    self.fail("无法保存配对记录。你原有的配对记录未被替换。")
                 }
                 return
             }
             self.phase = .ready
-            self.message = "Ready"
+            self.message = "已就绪"
             // Never launch/dismiss over system Settings or another app.
             if UIApplication.shared.applicationState == .active { self.finishPresentation() }
         }
@@ -242,42 +242,42 @@ struct JitSetupSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Set up game debugging").font(.title2.bold())
+                    Text("设置游戏调试环境").font(.title2.bold())
                     if setup.phase == .pairing {
                         if let code = pairing.code {
                             // Plain text first: the picture-in-picture layer below shows
                             // nothing for someone who has picture in picture turned off.
-                            Text("Pairing code").font(.headline).foregroundStyle(.secondary)
+                            Text("配对码").font(.headline).foregroundStyle(.secondary)
                             Text(verbatim: String(code.prefix(3)) + " " + String(code.suffix(3)))
                                 .font(.system(size: 56, weight: .semibold, design: .monospaced))
                                 .frame(maxWidth: .infinity)
-                                .accessibilityLabel("Pairing code \(code.map(String.init).joined(separator: " "))")
+                                .accessibilityLabel("配对码 \(code.map(String.init).joined(separator: " "))")
                             PairingCodeView(window: pairing.codeWindow)
                                 .aspectRatio(720.0 / 270.0, contentMode: .fit)
-                            Text("If the code does not float over Settings (Picture in Picture is off in Settings → General), remember it before you tap Open Settings.")
+                            Text("如果配对码没有以悬浮窗形式显示在系统「设置」上方（即「设置 → 通用 → 画中画」已关闭），请先记住这组数字再轻点「打开系统设置」。")
                                 .font(.footnote).foregroundStyle(.secondary)
-                            Button("Open Settings") { pairing.openSettings() }
+                            Button("打开系统设置") { pairing.openSettings() }
                                 .buttonStyle(.borderedProminent).controlSize(.large)
                         }
                         Text(pairing.status)
-                        Text("Playport finishes setup by itself when you come back.")
+                        Text("完成配对返回此处后，Playport 会自动完成剩余设置。")
                             .font(.footnote).foregroundStyle(.secondary)
                     } else {
                         if setup.phase != .failed { ProgressView() }
                         Text(setup.message)
                     }
                     if setup.phase == .failed {
-                        Button("Continue") { setup.retry() }.buttonStyle(.borderedProminent)
-                        Button("Playport permissions in iOS Settings") {
+                        Button("继续") { setup.retry() }.buttonStyle(.borderedProminent)
+                        Button("在 iOS「设置」中查看 Playport 权限") {
                             UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
                         }
                     }
-                    Text("Developer Mode and system permissions need your approval. No computer or pairing file is needed on iOS 27.")
+                    Text("「开发者模式」与系统权限需要你手动批准。在 iOS 27 上无需使用电脑或导入配对文件。")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 .padding(24)
             }
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { setup.cancel() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { setup.cancel() } } }
         }
         .interactiveDismissDisabled()
         .onAppear { setup.appeared() }

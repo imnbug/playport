@@ -81,10 +81,10 @@ final class AppRestart: ObservableObject {
             restartFailed?()
             #endif
             let how = JitProvider.inLiveContainer
-                ? "To play again, close Playport and launch it again from LiveContainer with JIT."
-                : "To play again, close Playport and open it again."
-            let game = notice.map { "\n\n\($0.title): \($0.text)" } ?? ""
-            TitleLaunch.shared.message = LaunchMessage(title: "Close Playport to play again", text: how + game)
+                ? "如需继续游玩，请关闭 Playport，然后在 LiveContainer 中启用 JIT 重新启动。"
+                : "如需继续游玩，请关闭 Playport 后重新打开。"
+            let game = notice.map { "\n\n\($0.title)：\($0.text)" } ?? ""
+            TitleLaunch.shared.message = LaunchMessage(title: "请关闭 Playport 后再游玩", text: how + game)
             return
         }
         restarting = true
@@ -151,12 +151,12 @@ final class AppRestart: ObservableObject {
         let why = failure ?? "the phone replied, but did not restart Playport"
         Self.log("failed: \(why)")
         #if PLAYPORT_RELEASE
-        let detail = "Check that LocalDevVPN is connected. To play again, close Playport and reopen it from the Home Screen."
+        let detail = "请检查 LocalDevVPN 是否已连接。如需继续游玩，请关闭 Playport 并从主屏幕重新打开。"
         #else
-        let detail = "\(why). Check that LocalDevVPN is connected. To play again, close Playport and reopen it from the Home Screen."
+        let detail = "\(why)。请检查 LocalDevVPN 是否已连接。如需继续游玩，请关闭 Playport 并从主屏幕重新打开。"
         #endif
-        let game = r.notice.map { "\n\n\($0.title): \($0.text)" } ?? ""
-        TitleLaunch.shared.message = LaunchMessage(title: "Playport could not restart itself", text: detail + game)
+        let game = r.notice.map { "\n\n\($0.title)：\($0.text)" } ?? ""
+        TitleLaunch.shared.message = LaunchMessage(title: "Playport 无法自动重启", text: detail + game)
     }
 
     private nonisolated static func request(started: Int64) -> String? {
@@ -229,8 +229,8 @@ final class AppRestart: ObservableObject {
             guard !started else { return }
             Self.log("the Play of \(next.titleID) did not start in this process")
             if TitleLaunch.shared.message == nil, PadModal.shared.content == nil {
-                TitleLaunch.shared.message = LaunchMessage(title: "\(next.title) did not start",
-                                                           text: "Its prerequisites are installed. Press Play to start it.")
+                TitleLaunch.shared.message = LaunchMessage(title: "\(next.title) 未能启动",
+                                                           text: "所需运行库已安装完成，请点击「开始游戏」启动。")
             }
         }
     }

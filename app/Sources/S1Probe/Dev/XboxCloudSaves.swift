@@ -38,7 +38,7 @@ enum XboxCloudSaves {
     /// unknown answer still holds a lapse's removal, but says nothing on the page).
     nonisolated static func note(productID: String) -> String? {
         unsynced(productID: productID) == true
-            ? "Saves on this phone are not in the Xbox cloud yet: they upload at the next play with a connection." : nil
+            ? "本机存档尚未同步至 Xbox 云端，将在下次联网游玩时自动上传。" : nil
     }
 }
 
@@ -72,7 +72,7 @@ final class XboxSaveConflictPrompt: ObservableObject {
 
     func ask(_ conflict: XboxSaveConflict, productID: String) async -> XboxSaveChoice {
         choose(.none, why: "another question")
-        let game = TitleLaunch.shared.running && !TitleLaunch.shared.title.isEmpty ? TitleLaunch.shared.title : "This game"
+        let game = TitleLaunch.shared.running && !TitleLaunch.shared.title.isEmpty ? TitleLaunch.shared.title : "当前游戏"
         return await withCheckedContinuation { c in
             answer = c
             nav.reset()
@@ -127,9 +127,9 @@ final class XboxSaveConflictPrompt: ObservableObject {
             + (confirmingLocal ? "; asking to confirm the phone's" : "")
     }
 
-    static var phone: String { "this \(UIDevice.current.model)" }
-    static func device(_ v: XboxSaveVersion) -> String { v.device ?? "another device (Windows or Xbox)" }
-    static func when(_ d: Date?) -> String { d.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "time unknown" }
+    static var phone: String { "此 \(UIDevice.current.model)" }
+    static func device(_ v: XboxSaveVersion) -> String { v.device ?? "其他设备（Windows 或 Xbox）" }
+    static func when(_ d: Date?) -> String { d.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "时间未知" }
 }
 
 /// The card over the running game.
@@ -142,27 +142,25 @@ struct XboxSaveConflictView: View {
                 Color.black.opacity(0.82).ignoresSafeArea()
                 VStack(spacing: 18) {
                     Image(systemName: "icloud.and.arrow.down").font(.system(size: 40)).foregroundStyle(.secondary)
-                    Text("\(s.game): which “\(s.conflict.displayName)” do you want to keep?").font(.title3.weight(.semibold))
+                    Text("\(s.game)：要保留哪一份「\(s.conflict.displayName)」？").font(.title3.weight(.semibold))
                         .multilineTextAlignment(.center)
-                    Text("This save changed on this phone and in your Xbox cloud since they last matched. Only this save is asked about; "
-                         + "another one that conflicts gets its own question.")
+                    Text("自上次同步以来，此存档在本机与 Xbox 云端均发生了变动。当前仅询问此存档；若还有其他冲突存档，将逐个询问。")
                         .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     HStack(alignment: .top, spacing: 16) {
-                        card("This phone", when: s.conflict.local.time, device: XboxSaveConflictPrompt.phone,
-                             button: prompt.confirmingLocal ? "Replace the cloud's  Ⓨ" : "Keep these  Ⓨ",
+                        card("本机存档", when: s.conflict.local.time, device: XboxSaveConflictPrompt.phone,
+                             button: prompt.confirmingLocal ? "覆盖云端存档  Ⓨ" : "保留此份  Ⓨ",
                              destructive: prompt.confirmingLocal) { prompt.press(.y) }
-                        card("Xbox cloud", when: s.conflict.cloud.time, device: XboxSaveConflictPrompt.device(s.conflict.cloud),
-                             button: "Keep these  Ⓧ", destructive: false) { prompt.press(.x) }
+                        card("Xbox 云存档", when: s.conflict.cloud.time, device: XboxSaveConflictPrompt.device(s.conflict.cloud),
+                             button: "保留此份  Ⓧ", destructive: false) { prompt.press(.x) }
                     }
                     if prompt.confirmingLocal {
-                        Text("Press Ⓨ again to replace the cloud's “\(s.conflict.displayName)” with this phone's. "
-                             + "The cloud's is kept as a copy on this phone first.")
+                        Text("再次按下 Ⓨ 以用本机存档覆盖云端的「\(s.conflict.displayName)」。云端存档会先在本机保留一份副本。")
                             .font(.callout.weight(.semibold)).multilineTextAlignment(.center)
                     } else {
-                        Text("Keeping one side replaces the other; the side you don't keep stays on this phone as a copy.")
+                        Text("保留其中一方会替换另一方；未保留的一方仍会在本机留存一份副本。")
                             .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     }
-                    Button("Decide later  Ⓑ") { prompt.press(.b) }.buttonStyle(.borderedProminent)
+                    Button("稍后决定  Ⓑ") { prompt.press(.b) }.buttonStyle(.borderedProminent)
                 }
                 .padding(24)
                 .frame(maxWidth: 640)
@@ -178,7 +176,7 @@ struct XboxSaveConflictView: View {
         VStack(spacing: 8) {
             Text(heading).font(.headline)
             Text(XboxSaveConflictPrompt.when(when)).font(.body.monospacedDigit())
-            Text("on \(device)").font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Text("设备：\(device)").font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
             Button(button, role: destructive ? .destructive : nil, action: action).buttonStyle(.bordered)
         }
         .padding(16)

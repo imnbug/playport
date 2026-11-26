@@ -307,12 +307,12 @@ final class LibraryModel: ObservableObject {
                     return false
                 case let .refuse(why):
                     Self.log("play \(t.name) (\(id)) refused: \(why)")
-                    PadModal.shared.picker(title: "Can't start \(t.name)", context: nil, note: why,
-                                           options: [PadOption(id: "ok", label: "OK")], selected: nil) { _ in }
+                    PadModal.shared.picker(title: "无法启动 \(t.name)", context: nil, note: why,
+                                           options: [PadOption(id: "ok", label: "好")], selected: nil) { _ in }
                     return false
                 case let .checkUpdate(product):
                     Self.log("play \(t.name) (\(id)): checking for an update")
-                    preparing[id] = "Checking for an update…"
+                    preparing[id] = "正在检查更新…"
                     facts.update = await BattleNetInstalled.shared.checkUpdate(product)
                     preparing[id] = nil
                     facts.freeBytes = freeBytes
@@ -587,7 +587,7 @@ final class LibraryModel: ObservableObject {
         let missing = local.missingCommonRedistributables(fetch)
         if !missing.isEmpty {
             Self.log("steam: \(t.name) lists Steamworks Common Redistributables depots \(shared); downloading \(missing)")
-            preparing[t.id] = "Downloading Steam redistributables…"
+            preparing[t.id] = "正在下载 Steam 运行库…"
             let started = Date()
             do {
                 guard let service = SteamAccountModel.current?.service else { throw SteamError.notLoggedOn }
@@ -703,7 +703,7 @@ final class LibraryModel: ObservableObject {
         var absent = Set<String>()
         if !missing.isEmpty {
             Self.log("gog: \(name) redistributables to download: \(missing.map(\.id).joined(separator: ", "))")
-            preparing[t.id] = "Downloading GOG redistributables…"
+            preparing[t.id] = "正在下载 GOG 运行库…"
             let started = Date()
             do {
                 let bytes = try await installer.placeDependencies(missing, productID: pid, installDir: installDir)
@@ -784,15 +784,15 @@ final class LibraryModel: ObservableObject {
         let offline = EpicAccount.shared.game(t.key.id)?.mayPlayOffline ?? false
         let why: String
         if case ClientError.notLoggedOn? = error as? ClientError {
-            why = "You are not signed in to Epic Games. Sign in under Settings › Accounts."
+            why = "你尚未登录 Epic Games，请前往「设置 › 账号」登录。"
         } else {
-            why = InstallCopy.detailed("Epic Games can't be reached.", error)
+            why = InstallCopy.detailed("无法连接 Epic Games。", error)
         }
-        let note = why + (offline ? " This game can also play offline, without its online features." : "")
-        var options = [PadOption(id: "retry", label: "Try again")]
-        if offline { options.append(PadOption(id: "offline", label: "Play offline")) }
-        options.append(PadOption(id: "cancel", label: "Cancel"))
-        PadModal.shared.picker(title: "Epic could not sign the game in", context: t.name, note: note, options: options,
+        let note = why + (offline ? " 此游戏也支持离线游玩（无法使用在线功能）。" : "")
+        var options = [PadOption(id: "retry", label: "重试")]
+        if offline { options.append(PadOption(id: "offline", label: "离线游玩")) }
+        options.append(PadOption(id: "cancel", label: "取消"))
+        PadModal.shared.picker(title: "Epic 无法登录该游戏", context: t.name, note: note, options: options,
                                selected: nil) { choice in
             switch choice {
             case "retry": Task { try? await LibraryModel.shared.play(t.id) }
@@ -808,8 +808,8 @@ final class LibraryModel: ObservableObject {
     func askRiskNotice(_ t: InstalledTitle, _ product: BattleNetProduct) {
         let notice = BattleNetPlay.notice(product)
         PadModal.shared.picker(title: notice.title, context: t.name, note: notice.text,
-                               options: [PadOption(id: Self.noticeDecline, label: "Don't play"),
-                                         PadOption(id: Self.noticeAccept, label: "I understand, play")],
+                               options: [PadOption(id: Self.noticeDecline, label: "暂不游玩"),
+                                         PadOption(id: Self.noticeAccept, label: "我已了解，继续开始")],
                                selected: nil) { choice in
             guard choice == Self.noticeAccept else {
                 Self.log("play \(t.name) (\(t.id)): ban-risk notice declined; Play not started")

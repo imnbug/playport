@@ -110,8 +110,8 @@ struct TextBarView: View {
         VStack {
             Spacer(minLength: 0).allowsHitTesting(false)
             HStack(spacing: 8) {
-                button("xmark", label: "Close") { model.close() }
-                button(model.bar.secure ? "lock.fill" : "lock.open", label: model.bar.secure ? "Password mode on" : "Password mode off",
+                button("xmark", label: "关闭") { model.close() }
+                button(model.bar.secure ? "lock.fill" : "lock.open", label: model.bar.secure ? "密码模式已开启" : "密码模式已关闭",
                        lit: model.bar.secure) { model.setSecure(!model.bar.secure) }
                 TextBarField(model: model)
                     .frame(height: 36)
@@ -199,7 +199,7 @@ private struct TextBarField: UIViewRepresentable {
         f.textColor = UIColor(PP.text)
         f.tintColor = UIColor(PP.accent)
         f.font = .systemFont(ofSize: 16)
-        f.attributedPlaceholder = NSAttributedString(string: "Type into the game", attributes: [.foregroundColor: UIColor(PP.muted)])
+        f.attributedPlaceholder = NSAttributedString(string: "向游戏输入文本", attributes: [.foregroundColor: UIColor(PP.muted)])
         f.textContentType = .username
         f.setContentHuggingPriority(.defaultLow, for: .horizontal)
         f.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)

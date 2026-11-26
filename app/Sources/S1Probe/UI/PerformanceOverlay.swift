@@ -88,12 +88,22 @@ final class PerformanceOverlayView: UIView {
         text.append(NSAttributedString(string: "●", attributes: [.font: UIFont.systemFont(ofSize: 11),
                                                                 .foregroundColor: Self.color(thermal)]))
         if thermal != .nominal {
-            text.append(NSAttributedString(string: " " + ThermalLog.name(thermal).capitalized,
+            text.append(NSAttributedString(string: " " + Self.thermalText(thermal),
                                            attributes: [.font: UIFont.systemFont(ofSize: 11, weight: .semibold),
                                                         .foregroundColor: UIColor.white]))
         }
         label.attributedText = text
         setNeedsLayout()
+    }
+
+    private static func thermalText(_ s: ProcessInfo.ThermalState) -> String {
+        switch s {
+        case .nominal: ""
+        case .fair: "微热"
+        case .serious: "发热"
+        case .critical: "过热"
+        @unknown default: ThermalLog.name(s).capitalized
+        }
     }
 
     private static func color(_ s: ProcessInfo.ThermalState) -> UIColor {

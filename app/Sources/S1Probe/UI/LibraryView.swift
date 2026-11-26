@@ -51,7 +51,7 @@ final class LibraryGrid: ObservableObject {
     /// The controller keyboard over the Library: the grid filters as the player types.
     func openSearch() {
         searching = true
-        PadModal.shared.keyboard(title: "Search", text: search, placeholder: "Game name", maxLength: 64,
+        PadModal.shared.keyboard(title: "搜索", text: search, placeholder: "游戏名称", maxLength: 64,
                                  changed: { [weak self] in self?.search = $0 },
                                  done: { [weak self] in
                                      self?.search = $0
@@ -61,16 +61,16 @@ final class LibraryGrid: ObservableObject {
 
     /// The stores, Installed only and the sorts, in one list picker (UI/Pad/PadPicker.swift): the View button (⧉).
     func openFilterSort() {
-        let order = "Sort"
-        var options: [PadOption] = Self.column.map { PadOption(id: "filter:\($0.rawValue)", label: $0.label, section: "Store") }
-        options.append(PadOption(id: "installed", label: "Installed only", detail: "Games in C:\\Games or downloading", section: "Show"))
-        options.append(PadOption(id: "add", label: "Add a game", detail: "From Files: a folder or a .zip", section: "Games"))
-        options += [PadOption(id: "sort:\(LibrarySort.recent.rawValue)", label: "Recent", detail: "Last played first", section: order),
-                    PadOption(id: "sort:\(LibrarySort.name.rawValue)", label: "Name", detail: "A to Z", section: order),
-                    PadOption(id: "sort:\(LibrarySort.size.rawValue)", label: "Size", detail: "Largest first", section: order)]
+        let order = "排序方式"
+        var options: [PadOption] = Self.column.map { PadOption(id: "filter:\($0.rawValue)", label: $0.label, section: "商店") }
+        options.append(PadOption(id: "installed", label: "仅已安装", detail: "位于 C:\\Games 或正在下载的游戏", section: "显示"))
+        options.append(PadOption(id: "add", label: "导入本地游戏", detail: "从「文件」中选择文件夹或 .zip 压缩包", section: "游戏"))
+        options += [PadOption(id: "sort:\(LibrarySort.recent.rawValue)", label: "最近游玩", detail: "上次游玩优先", section: order),
+                    PadOption(id: "sort:\(LibrarySort.name.rawValue)", label: "名称", detail: "A 到 Z", section: order),
+                    PadOption(id: "sort:\(LibrarySort.size.rawValue)", label: "大小", detail: "从大到小", section: order)]
         var selected: Set<String> = ["filter:\(filter.rawValue)", "sort:\(sort.rawValue)"]
         if installedOnly { selected.insert("installed") }
-        PadModal.shared.picker(title: "Filter & sort", context: "Library", options: options, selected: selected) { [weak self] id in
+        PadModal.shared.picker(title: "筛选与排序", context: "游戏库", options: options, selected: selected) { [weak self] id in
             if id == "add" { GameImports.requests.send(); return }
             if id == "installed" { self?.installedOnly.toggle(); return }
             let parts = id.split(separator: ":", maxSplits: 1).map(String.init)
@@ -124,9 +124,9 @@ final class LibraryGrid: ObservableObject {
 
     static func label(_ sort: LibrarySort) -> String {
         switch sort {
-        case .recent: "Recent"
-        case .name: "Name"
-        case .size: "Size"
+        case .recent: "最近游玩"
+        case .name: "名称"
+        case .size: "大小"
         }
     }
 }
@@ -296,7 +296,7 @@ private struct LibraryGridView: View {
                 Button { grid.openSearch() } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "magnifyingglass").font(.system(size: 12))
-                        Text(grid.search.isEmpty ? "Search" : grid.search)
+                        Text(grid.search.isEmpty ? "搜索" : grid.search)
                             .foregroundStyle(grid.search.isEmpty ? PP.muted : PP.soft).lineLimit(1)
                         Spacer(minLength: 0)
                     }
@@ -315,7 +315,7 @@ private struct LibraryGridView: View {
             Button { GameImports.requests.send() } label: {
                 HStack(spacing: 5) {
                     if imports.planning { ProgressView().controlSize(.mini) } else { Image(systemName: "plus").font(.system(size: 11, weight: .bold)) }
-                    Text("Add a game")
+                    Text("导入本地游戏")
                     PadGlyph(button: .x).scaleEffect(0.8)
                 }
                 .font(.system(size: 13, weight: .semibold)).foregroundStyle(PP.text)
@@ -326,7 +326,7 @@ private struct LibraryGridView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("library-add")
             Button { grid.openFilterSort() } label: {
-                Text("Sort: \(LibraryGrid.label(grid.sort))")
+                Text("排序：\(LibraryGrid.label(grid.sort))")
                     .font(.system(size: 12)).foregroundStyle(PP.muted)
                     .padding(.horizontal, 8).padding(.vertical, 4)
             }
@@ -334,7 +334,7 @@ private struct LibraryGridView: View {
             .accessibilityIdentifier("library-sort")
             // Styled as the sort beside it; a tap flips it, ⧉ does too (it is not in the ring).
             Button { grid.installedOnly.toggle() } label: {
-                Text("Installed only: \(grid.installedOnly ? "On" : "Off")")
+                Text("仅已安装：\(grid.installedOnly ? "开" : "关")")
                     .font(.system(size: 12)).foregroundStyle(PP.muted)
                     .padding(.horizontal, 8).padding(.vertical, 4)
             }
@@ -384,7 +384,7 @@ private struct LibraryGridView: View {
                 // Every tile's art on screen, drawn or not: the ring's targets. The drawn
                 // ones report the same frames themselves.
                 .padFrames(offscreenFrames(shown.map { "lib:\($0.id)" } + (addTile ? [AddGameTile.item] : []), tile: tile, pitch: pitch),
-                           hint: "Open")
+                           hint: "打开")
                 .refreshable {
                     library.refresh()
                     #if !PLAYPORT_RELEASE
@@ -449,20 +449,20 @@ private struct LibraryGridView: View {
             Text(emptyTitle).font(PP.display(24)).foregroundStyle(PP.text)
             Text(emptyText).font(.system(size: 13)).foregroundStyle(PP.soft)
             if needsSignIn {
-                EmptyButton(text: "Steam account", primary: true)
-                    .padItem("signin", hint: "Open", cornerRadius: 14) { _ = nav.open("account") }.padding(.top, 6)
+                EmptyButton(text: "Steam 账号", primary: true)
+                    .padItem("signin", hint: "打开", cornerRadius: 14) { _ = nav.open("account") }.padding(.top, 6)
             }
             if needsStore {
-                EmptyButton(text: "\(grid.filter.label) account", primary: true)
-                    .padItem("store-signin", hint: "Open", cornerRadius: 14) { _ = nav.open("account") }.padding(.top, 6)
+                EmptyButton(text: "\(grid.filter.label) 账号", primary: true)
+                    .padItem("store-signin", hint: "打开", cornerRadius: 14) { _ = nav.open("account") }.padding(.top, 6)
             }
             if showsAddTile {
-                EmptyButton(text: imports.planning ? "Reading…" : "Add a game", primary: !needsSignIn)
-                    .padItem(AddGameTile.item, hint: "Add", cornerRadius: 14) { GameImports.requests.send() }.padding(.top, 6)
+                EmptyButton(text: imports.planning ? "正在读取…" : "导入本地游戏", primary: !needsSignIn)
+                    .padItem(AddGameTile.item, hint: "导入", cornerRadius: 14) { GameImports.requests.send() }.padding(.top, 6)
             }
             if offersAll {
-                EmptyButton(text: "Show all", primary: !needsSignIn && !needsStore && !showsAddTile)
-                    .padItem("show-all", hint: "Show", cornerRadius: 14) { grid.installedOnly = false }.padding(.top, 6)
+                EmptyButton(text: "显示全部", primary: !needsSignIn && !needsStore && !showsAddTile)
+                    .padItem("show-all", hint: "显示", cornerRadius: 14) { grid.installedOnly = false }.padding(.top, 6)
             }
         }
         .padding(20)
@@ -478,39 +478,39 @@ private struct LibraryGridView: View {
     }
 
     private var emptyTitle: String {
-        if !grid.search.isEmpty { return "No games match “\(grid.search)”" }
-        if needsStore { return "Sign in to \(grid.filter.label)" }
+        if !grid.search.isEmpty { return "没有匹配「\(grid.search)」的游戏" }
+        if needsStore { return "登录 \(grid.filter.label)" }
         if grid.installedOnly {
-            return grid.filter == .all ? "No games installed" : "No \(grid.filter.label) games installed"
+            return grid.filter == .all ? "暂无已安装的游戏" : "暂无已安装的 \(grid.filter.label) 游戏"
         }
         switch grid.filter {
-        case .all: return "No games yet"
-        case .steam: return needsSignIn ? "Sign in to Steam" : (model.gamesLoading ? "Loading your games…" : "No Steam games")
-        case .gog, .epic: return "No \(grid.filter.label) games"
-        case .battlenet: return bnet.loading ? "Asking Blizzard…" : "No Battle.net games offered"
-        case .xbox: return "No \(grid.filter.label) games"
+        case .all: return "暂无游戏"
+        case .steam: return needsSignIn ? "登录 Steam" : (model.gamesLoading ? "正在加载游戏库…" : "暂无 Steam 游戏")
+        case .gog, .epic: return "暂无 \(grid.filter.label) 游戏"
+        case .battlenet: return bnet.loading ? "正在连接暴雪服务器…" : "暂无可用的 Battle.net 游戏"
+        case .xbox: return "暂无 \(grid.filter.label) 游戏"
         }
     }
 
     private var emptyText: String {
-        if !grid.search.isEmpty { return "Press B to clear the search." }
-        if needsStore { return "Connect your \(grid.filter.label) account in Settings › Accounts to see your games here." }
+        if !grid.search.isEmpty { return "按 B 键清除搜索条件。" }
+        if needsStore { return "前往「设置 › 账号」关联你的 \(grid.filter.label) 账号，即可在此查看游戏。" }
         if grid.installedOnly {
-            return "Install one from a store, or add one from Files: its folder or a .zip of it. Installed only is in Filter & sort (⧉)."
+            return "可从商店安装游戏，或从「文件」导入游戏文件夹或 .zip 压缩包。可在「筛选与排序」（⧉）中关闭「仅已安装」。"
         }
         switch grid.filter {
         case .all:
-            return model.gamesError ?? "Your installed games and games from connected stores appear here. Sign in to Steam or add a game from Files to get started."
+            return model.gamesError ?? "已安装的游戏和已关联商店中的游戏会显示在这里。登录 Steam 或从「文件」导入本地游戏即可开始。"
         case .steam:
-            if needsSignIn { return model.state == .expired ? AccountCopy.status(.expired) : "Pair Playport with your Steam account to see your games." }
-            return model.gamesError ?? "Your Steam account owns no games."
+            if needsSignIn { return model.state == .expired ? AccountCopy.status(.expired) : "将 Playport 与你的 Steam 账号配对以查看你的游戏。" }
+            return model.gamesError ?? "你的 Steam 账号中暂无游戏。"
         case .gog, .epic:
-            return "Games from \(grid.filter.label) appear here."
+            return "来自 \(grid.filter.label) 的游戏会显示在这里。"
         case .battlenet:
-            return bnet.error ?? "World of Warcraft products appear here while their builds carry an x64 client."
+            return bnet.error ?? "当《魔兽世界》各版本提供 x64 客户端时，会显示在这里。"
         case .xbox:
             #if PLAYPORT_RELEASE
-            return "Games from \(grid.filter.label) appear here."
+            return "来自 \(grid.filter.label) 的游戏会显示在这里。"
             #else
             return XboxLibrary.emptyMessage
             #endif
@@ -574,10 +574,10 @@ private struct StoreColumn: View {
                 if on { Capsule().fill(PP.accent).frame(width: 3, height: 20).offset(x: -7) }
             }
             .accessibilityElement()
-            .accessibilityLabel(f.label + (LibraryGrid.connected(f) ? "" : ", not connected"))
+            .accessibilityLabel(f.label + (LibraryGrid.connected(f) ? "" : "，未连接"))
             .accessibilityAddTraits(on ? .isSelected : [])
             // A tap, or A with the ring here: this store, then the grid.
-            .padItem(Self.item(f), hint: "Show", cornerRadius: 10) {
+            .padItem(Self.item(f), hint: "显示", cornerRadius: 10) {
                 grid.filter = f
                 grid.toTiles.send()
             }
@@ -660,7 +660,7 @@ private struct LibraryTile: View {
                 if showSource { GameSourceBadge(source: entry.source).padding(6) }
             }
             .clipShape(RoundedRectangle(cornerRadius: 10))
-            .padItem("lib:\(entry.id)", hint: "Open", cornerRadius: 10) { nav.openGame(.title(entry.id)) }
+            .padItem("lib:\(entry.id)", hint: "打开", cornerRadius: 10) { nav.openGame(.title(entry.id)) }
             meta
                 .font(.system(size: 12)).foregroundStyle(PP.muted).lineLimit(1)
                 .frame(width: width, height: metaHeight, alignment: .leading)
@@ -679,19 +679,19 @@ private struct LibraryTile: View {
                 switch installed.badge {
                 case .ready:
                     Text("●").foregroundStyle(PP.ok)
-                    Text(["Ready", played(installed.lastPlayed)].compactMap { $0 }.joined(separator: " · "))
+                    Text(["就绪", played(installed.lastPlayed)].compactMap { $0 }.joined(separator: " · "))
                 case .needsRepair:
                     Text("●").foregroundStyle(PP.accent)
-                    Text("Needs repair")
+                    Text("需要修复")
                 case .incomplete:
-                    Text("No executable")
+                    Text("缺少可执行文件")
                 }
                 if let game, SteamInstallStatus.updateAvailable(installed, game.info) {
-                    Text("· Update").foregroundStyle(PP.accent)
+                    Text("· 可更新").foregroundStyle(PP.accent)
                 }
             }
         } else {
-            Text(["Not installed", entry.sizeBytes.map(ByteCount.format)].compactMap { $0 }.joined(separator: " · "))
+            Text(["未安装", entry.sizeBytes.map(ByteCount.format)].compactMap { $0 }.joined(separator: " · "))
         }
     }
 
@@ -699,9 +699,9 @@ private struct LibraryTile: View {
         let update = entry.installed && job.kind != .repair
         switch job.phase {
         case .queued:
-            return [update ? "Update queued" : "Queued", entry.sizeBytes.map(ByteCount.format)].compactMap { $0 }.joined(separator: " · ")
+            return [update ? "等待更新" : "排队中", entry.sizeBytes.map(ByteCount.format)].compactMap { $0 }.joined(separator: " · ")
         case .downloading:
-            let what = job.kind == .repair ? "Repairing" : update ? "Updating" : "Downloading"
+            let what = job.kind == .repair ? "正在修复" : update ? "正在更新" : "正在下载"
             return job.fraction.map { "\(what) · \(Int($0 * 100))%" } ?? what
         default:
             return job.status
@@ -709,7 +709,7 @@ private struct LibraryTile: View {
     }
 
     private func played(_ when: Date?) -> String? {
-        when.map { "Played " + $0.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)) }
+        when.map { "上次游玩：" + $0.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)) }
     }
 }
 
@@ -731,12 +731,12 @@ private struct AddGameTile: View {
                     if planning { ProgressView().controlSize(.small) } else {
                         Image(systemName: "plus").font(.system(size: 20, weight: .semibold)).foregroundStyle(PP.soft)
                     }
-                    Text("Add a game").font(.system(size: 13, weight: .semibold)).foregroundStyle(PP.soft)
+                    Text("导入本地游戏").font(.system(size: 13, weight: .semibold)).foregroundStyle(PP.soft)
                 }
             }
             .frame(width: width, height: artHeight)
-            .padItem(Self.item, hint: "Add", cornerRadius: 10) { GameImports.requests.send() }
-            Text(planning ? "Reading the folder…" : "From Files: a folder or a .zip")
+            .padItem(Self.item, hint: "导入", cornerRadius: 10) { GameImports.requests.send() }
+            Text(planning ? "正在读取文件夹…" : "从「文件」选择文件夹或 .zip")
                 .font(.system(size: 12)).foregroundStyle(PP.muted).lineLimit(1)
                 .frame(width: width, height: metaHeight, alignment: .leading)
         }
@@ -754,7 +754,7 @@ struct GameSourceBadge: View {
             .foregroundStyle(.white.opacity(0.9))
             .padding(.horizontal, 6).padding(.vertical, 3)
             .background(.black.opacity(0.65), in: Capsule())
-            .accessibilityLabel("Source: \(source.label)")
+            .accessibilityLabel("来源：\(source.label)")
             .allowsHitTesting(false)
     }
 }

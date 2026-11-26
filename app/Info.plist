@@ -9,9 +9,9 @@
 	<string>1</string>
 	<!-- Device-initiated pairing: publish through Bonjour, not raw multicast (decision 0033). -->
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Playport saves the screenshots you take from its in-game menu to Photos.</string>
+	<string>Playport 需要相册权限以保存你在游戏内菜单截取的屏幕截图。</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Playport advertises a pairing host so this iPhone can set up game debugging without a computer.</string>
+	<string>Playport 需要本地网络权限以在本机完成调试配对，无需连接电脑即可开启游戏 JIT。</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_remotepairing-pairable-host._tcp</string>

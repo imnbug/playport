@@ -35,7 +35,7 @@ final class PadLayoutEditor: ObservableObject {
     /// A new layout, Xbox's to start from.
     func create() {
         let all = PadLayoutStore.shared.all
-        draft = PadLayout(id: UUID().uuidString, name: all.freeName("My layout"), preset: .xbox)
+        draft = PadLayout(id: UUID().uuidString, name: all.freeName("我的布局"), preset: .xbox)
         selected = nil
         isNew = true
         fromGame = false
@@ -44,7 +44,7 @@ final class PadLayoutEditor: ObservableObject {
     func save() {
         guard var d = draft else { return }
         d.name = d.name.trimmingCharacters(in: .whitespaces)
-        if d.name.isEmpty { d.name = PadLayoutStore.shared.all.freeName("My layout") }
+        if d.name.isEmpty { d.name = PadLayoutStore.shared.all.freeName("我的布局") }
         PadLayoutStore.shared.all.save(d)
         close()
     }
@@ -112,34 +112,34 @@ struct PadLayoutEditorView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
-                    Button("Cancel") { editor.close() }
+                    Button("取消") { editor.close() }
                     Spacer()
-                    Text(editor.isNew ? "New layout" : "Edit layout").font(.system(size: 17, weight: .semibold))
+                    Text(editor.isNew ? "新建布局" : "编辑布局").font(.system(size: 17, weight: .semibold))
                     Spacer()
-                    Button("Save") { editor.save() }.fontWeight(.semibold)
+                    Button("保存") { editor.save() }.fontWeight(.semibold)
                 }
                 .tint(PP.accent)
-                TextField("Name", text: draft.name)
+                TextField("布局名称", text: draft.name)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 12).frame(height: 40)
                     .background(PP.surface, in: RoundedRectangle(cornerRadius: 10))
-                Toggle("Vibrate on press", isOn: draft.haptics).tint(PP.accent)
+                Toggle("按键震动", isOn: draft.haptics).tint(PP.accent)
                 let isDefault = !editor.isNew && store.all.defaultID == draft.wrappedValue.id
-                Toggle("Default for games", isOn: Binding(get: { isDefault }, set: { on in
+                Toggle("设为默认布局", isOn: Binding(get: { isDefault }, set: { on in
                     if on, !editor.isNew { store.all.makeDefault(draft.wrappedValue.id) }
                 }))
                 .tint(PP.accent)
                 .disabled(editor.isNew || isDefault)
                 HStack(spacing: 10) {
-                    Menu("Reset to…") {
+                    Menu("重置为…") {
                         ForEach(PadLayout.Preset.allCases, id: \.self) { p in
                             Button(p.title) { draft.wrappedValue.reset(to: p) }
                         }
                     }
                     if !editor.isNew {
-                        Button("Save as new") { editor.saveAsNew() }
+                        Button("另存为新布局") { editor.saveAsNew() }
                         Spacer()
-                        Button("Delete", role: .destructive) { editor.delete() }
+                        Button("删除", role: .destructive) { editor.delete() }
                             .disabled(store.all.layouts.count < 2)
                     }
                 }
@@ -151,7 +151,7 @@ struct PadLayoutEditorView: View {
                 if let c = editor.selected {
                     selectedTools(c)
                 } else {
-                    Text("Drag a control to move it. Touch one to change its size or hide it.")
+                    Text("拖动控件可调整位置；轻触控件可调整大小或将其隐藏。")
                         .font(.system(size: 14)).foregroundStyle(PP.muted)
                 }
             }
@@ -164,15 +164,15 @@ struct PadLayoutEditorView: View {
         let place = Binding(get: { draft.wrappedValue[c] }, set: { draft.wrappedValue[c] = $0 })
         Text(c.title).font(.system(size: 15, weight: .semibold))
         HStack {
-            Text("Size")
+            Text("大小")
             Slider(value: place.scale, in: PadLayout.scales).tint(PP.accent)
             Text("\(Int((place.wrappedValue.scale * 100).rounded()))%").monospacedDigit().foregroundStyle(PP.muted)
                 .frame(width: 48, alignment: .trailing)
         }
         if c.canHide {
-            Toggle("Hidden", isOn: place.hidden).tint(PP.accent)
+            Toggle("隐藏", isOn: place.hidden).tint(PP.accent)
         } else {
-            Text("Home stays: held, it opens the game's menu.").font(.system(size: 13)).foregroundStyle(PP.muted)
+            Text("Home 键不可隐藏：长按该键才能打开游戏内菜单。").font(.system(size: 13)).foregroundStyle(PP.muted)
         }
     }
 }
@@ -182,17 +182,16 @@ struct VirtualPadSettings: View {
     @ObservedObject private var store = PadLayoutStore.shared
 
     var body: some View {
-        SettingsNote(text: "A game's Game options › Virtual gamepad puts this controller under the game while the "
-                     + "phone is open and upright. A game starts with the default layout; hold ⌂ in the game to "
-                     + "change or edit its own.")
+        SettingsNote(text: "开启游戏的「游戏选项 › 虚拟手柄」后，手机展开并竖屏握持时会在游戏画面下方显示此手柄。"
+                     + "游戏默认使用默认布局；在游戏中长按 ⌂ 可切换或编辑专属布局。")
         ForEach(store.all.layouts) { l in
             let isDefault = l.id == store.all.defaultID
-            PadRow(id: "set:padLayout:\(l.id)", title: l.name, subtitle: l.haptics ? "Vibrates on press" : "No vibration",
-                   value: isDefault ? "Default" : nil, accessory: .chevron, hint: "Edit") {
+            PadRow(id: "set:padLayout:\(l.id)", title: l.name, subtitle: l.haptics ? "按键震动已开启" : "无震动",
+                   value: isDefault ? "默认" : nil, accessory: .chevron, hint: "编辑") {
                 PadLayoutEditor.shared.open(l.id, fromGame: false)
             }
         }
-        PadRow(id: "set:padLayout:new", title: "New layout", accessory: .chevron, hint: "Create") {
+        PadRow(id: "set:padLayout:new", title: "新建布局", accessory: .chevron, hint: "创建") {
             PadLayoutEditor.shared.create()
         }
     }

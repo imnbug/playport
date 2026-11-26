@@ -189,11 +189,11 @@ private struct GameDetailPage: View {
         Group {
             if t == nil, g == nil, gogGame == nil, epicGame == nil, bnetProduct == nil, xboxTitle == nil {
                 VStack(spacing: 8) {
-                    Text("Not installed").font(PP.display(28)).foregroundStyle(PP.text)
+                    Text("未安装").font(PP.display(28)).foregroundStyle(PP.text)
                     #if PLAYPORT_RELEASE
-                    Text("This game is no longer in Playport.").foregroundStyle(PP.muted)
+                    Text("此游戏已不在 Playport 中。").foregroundStyle(PP.muted)
                     #else
-                    Text("This game's folder is no longer in C:\\Games.").foregroundStyle(PP.muted)
+                    Text("此游戏文件夹已不在 C:\\Games 中。").foregroundStyle(PP.muted)
                     #endif
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -238,7 +238,7 @@ private struct GameDetailPage: View {
                             if panel == .options {
                                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                                     Circle().fill(PP.accent).frame(width: 7, height: 7)
-                                    Text("Changed for this game. The rest follow Settings.")
+                                    Text("已针对此游戏单独修改，其余项跟随全局「设置」。")
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                                 .font(.system(size: 13)).foregroundStyle(PP.soft)
@@ -325,8 +325,8 @@ private struct GameDetailPage: View {
                 (SteamAPISwap.state(in: root), SteamStub.sites(in: root))
             }.value
         }
-        .alert("Can't start \(name)", isPresented: Binding(get: { playError != nil }, set: { if !$0 { playError = nil } })) {
-            Button("OK") {}
+        .alert("无法启动 \(name)", isPresented: Binding(get: { playError != nil }, set: { if !$0 { playError = nil } })) {
+            Button("确定") {}
         } message: {
             Text(playError ?? "")
         }
@@ -393,8 +393,8 @@ private struct GameDetailPage: View {
     private func subtitle(_ t: InstalledTitle?, _ g: SteamGame?) -> String? {
         let developer = t?.developer ?? g?.info.developer
         let controller: String? = switch g?.info.controllerSupport {
-        case "full": "Controller supported"
-        case "partial": "Partial controller support"
+        case "full": "完全支持手柄"
+        case "partial": "部分支持手柄"
         default: nil
         }
         let parts = [developer, controller].compactMap { $0 }
@@ -414,25 +414,25 @@ private struct GameDetailPage: View {
         if let job {
             jobControls(job)
         } else if launch.spent {
-            SecondaryButton(id: "game:close", systemImage: "xmark.circle", title: "Close Playport", hint: "Close") { exit(0) }
+            SecondaryButton(id: "game:close", systemImage: "xmark.circle", title: "关闭 Playport", hint: "关闭") { exit(0) }
         } else {
-            PrimaryButton(id: "game:play", title: library.preparing[t.id] ?? "Play",
-                          enabled: canPlay(t) && library.preparing[t.id] == nil, hint: "Play") { start(t) }
+            PrimaryButton(id: "game:play", title: library.preparing[t.id] ?? "开始游戏",
+                          enabled: canPlay(t) && library.preparing[t.id] == nil, hint: "开始游戏") { start(t) }
             #if !PLAYPORT_RELEASE
             // An Xbox copy whose licence lapsed (PLA-505): ask Microsoft again, or uninstall it before its date.
             if t.store == .xbox, xboxLapses.state(t.key).isLapsed {
-                SecondaryButton(id: "game:xboxLicence", systemImage: "arrow.clockwise", title: "Check licence",
-                                enabled: !launch.running, hint: "Check licence") { Task { await xboxLapses.check(t) } }
-                SecondaryButton(id: "game:xboxUninstall", systemImage: "trash", title: "Uninstall now",
-                                enabled: !launch.running && !library.removing.contains(t.id), hint: "Uninstall") { xboxLapses.askRemove(t) }
+                SecondaryButton(id: "game:xboxLicence", systemImage: "arrow.clockwise", title: "检查许可",
+                                enabled: !launch.running, hint: "检查许可") { Task { await xboxLapses.check(t) } }
+                SecondaryButton(id: "game:xboxUninstall", systemImage: "trash", title: "立即卸载",
+                                enabled: !launch.running && !library.removing.contains(t.id), hint: "卸载") { xboxLapses.askRemove(t) }
             }
             #endif
         }
         if let s = stats, !s.schema.achievements.isEmpty {
             SecondaryButton(id: "game:achievements", systemImage: "trophy", title: "\(s.unlockedCount) / \(s.schema.achievements.count)",
-                            hint: "Achievements") { navigation.gamePanels = [.achievements] }
+                            hint: "成就") { navigation.gamePanels = [.achievements] }
         }
-        SecondaryButton(id: "game:options", systemImage: "slider.horizontal.3", title: "Options", glyph: .x, hint: "Game options") {
+        SecondaryButton(id: "game:options", systemImage: "slider.horizontal.3", title: "选项", glyph: .x, hint: "游戏选项") {
             navigation.gamePanels = [.options]
         }
         // Updates (PLA-521): every Play checks first; Check for update asks by hand, and Update
@@ -441,47 +441,47 @@ private struct GameDetailPage: View {
         if let p = installedBnet, job == nil {
             let update = bnetInstalled.updates[p]
             if case .available? = update {
-                SecondaryButton(id: "game:update", systemImage: "arrow.down.circle", title: "Update",
+                SecondaryButton(id: "game:update", systemImage: "arrow.down.circle", title: "更新",
                                 enabled: !launch.running && !installs.suspended,
-                                hint: "Update") { bnetInstalled.update(p, downloads: installs) }
+                                hint: "更新") { bnetInstalled.update(p, downloads: installs) }
             } else {
-                SecondaryButton(id: "game:check-update", systemImage: "arrow.triangle.2.circlepath", title: "Check for update",
+                SecondaryButton(id: "game:check-update", systemImage: "arrow.triangle.2.circlepath", title: "检查更新",
                                 enabled: !launch.running && update != .checking,
-                                hint: "Check for update") { Task { await bnetInstalled.checkUpdate(p) } }
+                                hint: "检查更新") { Task { await bnetInstalled.checkUpdate(p) } }
             }
         }
         #if !PLAYPORT_RELEASE
         if job == nil, t.store == .xbox, t.source == .installed {
             SecondaryButton(id: "game:addons", systemImage: "puzzlepiece.extension", title: xboxAddOns.title(t.key.id),
-                            enabled: !launch.running, hint: "Add-ons") { xboxAddOns.open(t) }
+                            enabled: !launch.running, hint: "附加内容") { xboxAddOns.open(t) }
         }
         #endif
         if job == nil, t.store == .gog, t.source == .installed, let newest = gog.newest[t.key.id], newest != t.storeVersion {
-            SecondaryButton(id: "game:update", systemImage: "arrow.down.circle", title: "Update", enabled: canDownloadGOG && !launch.running,
-                            hint: "Update") { gog.install(t.key.id, name: t.name, kind: .update) }
+            SecondaryButton(id: "game:update", systemImage: "arrow.down.circle", title: "更新", enabled: canDownloadGOG && !launch.running,
+                            hint: "更新") { gog.install(t.key.id, name: t.name, kind: .update) }
         }
         if job == nil, t.store == .epic, t.source == .installed, let newest = epic.newest[t.key.id], newest != t.storeVersion {
-            SecondaryButton(id: "game:update", systemImage: "arrow.down.circle", title: "Update", enabled: canDownloadEpic && !launch.running,
-                            hint: "Update") { epic.install(t.key.id, name: t.name, kind: .update) }
+            SecondaryButton(id: "game:update", systemImage: "arrow.down.circle", title: "更新", enabled: canDownloadEpic && !launch.running,
+                            hint: "更新") { epic.install(t.key.id, name: t.name, kind: .update) }
         }
         #if !PLAYPORT_RELEASE
         if job == nil, t.store == .xbox, t.source == .installed, let newest = xboxUpdates.newest[t.key.id], newest != t.storeVersion {
-            SecondaryButton(id: "game:update", systemImage: "arrow.down.circle", title: "Update",
+            SecondaryButton(id: "game:update", systemImage: "arrow.down.circle", title: "更新",
                             enabled: XboxAccount.shared.state == .signedIn && !installs.suspended && !launch.running,
-                            hint: "Update") { xboxUpdates.update(t.key.id, name: t.name) }
+                            hint: "更新") { xboxUpdates.update(t.key.id, name: t.name) }
         }
         if job == nil, t.store == .xbox, t.source == .installed, xboxUpdates.newest[t.key.id] == nil {
             let id = t.key.id, busy = xboxUpdates.checking.contains(id)
             let current: String? = if case .current(let latest)? = xboxUpdates.answers[id] { latest } else { nil }
             SecondaryButton(id: "game:xboxCheckUpdate", systemImage: "arrow.clockwise",
-                            title: busy ? "Checking…" : current.map { "Up to date (\($0)) · Check again" } ?? "Check for update",
+                            title: busy ? "正在检查…" : current.map { "已是最新（\($0)）· 重新检查" } ?? "检查更新",
                             enabled: XboxAccount.shared.state == .signedIn && !busy && !launch.running,
-                            hint: "Check") { Task { await xboxUpdates.check(id, force: true) } }
+                            hint: "检查") { Task { await xboxUpdates.check(id, force: true) } }
         }
         #endif
         if job == nil, let g, SteamInstallStatus.updateAvailable(t, g.info) {
-            SecondaryButton(id: "game:update", systemImage: "arrow.down.circle", title: "Update", enabled: canDownload && !launch.running,
-                            hint: "Update") { installs.install(g.id, name: g.info.name) }
+            SecondaryButton(id: "game:update", systemImage: "arrow.down.circle", title: "更新", enabled: canDownload && !launch.running,
+                            hint: "更新") { installs.install(g.id, name: g.info.name) }
         }
     }
 
@@ -490,20 +490,20 @@ private struct GameDetailPage: View {
         if let job {
             jobControls(job)
         } else if stageOnDisk {
-            PrimaryButton(id: "game:install", title: "Resume download", enabled: canDownload, hint: "Resume") {
+            PrimaryButton(id: "game:install", title: "继续下载", enabled: canDownload, hint: "继续") {
                 installs.install(g.id, name: g.info.name)
             }
-            SecondaryButton(id: "game:discard", systemImage: "trash", title: "Discard", hint: "Discard") {
+            SecondaryButton(id: "game:discard", systemImage: "trash", title: "放弃下载", hint: "放弃") {
                 installs.discard(g.id)
                 stageOnDisk = false
             }
         } else {
             let size = g.info.installSize(branch: selectedBranch).map { " · " + ByteCount.format($0) } ?? ""
-            PrimaryButton(id: "game:install", title: "Install" + size, enabled: canDownload, hint: "Install") {
+            PrimaryButton(id: "game:install", title: "安装" + size, enabled: canDownload, hint: "安装") {
                 installs.install(g.id, name: g.info.name, branch: selectedBranch)
             }
             if branches.count > 1 {
-                SecondaryButton(id: "game:version", systemImage: nil, title: "Version", glyph: .x, hint: "Version") { pickVersion(g) }
+                SecondaryButton(id: "game:version", systemImage: nil, title: "版本", glyph: .x, hint: "版本") { pickVersion(g) }
             }
         }
     }
@@ -514,8 +514,8 @@ private struct GameDetailPage: View {
         if let job {
             jobControls(job)
         } else {
-            PrimaryButton(id: "game:install", title: gog.installer.hasStage(gg.id) ? "Resume download" : "Install",
-                          enabled: canDownloadGOG, hint: "Install") { gog.install(gg.id, name: gg.title) }
+            PrimaryButton(id: "game:install", title: gog.installer.hasStage(gg.id) ? "继续下载" : "安装",
+                          enabled: canDownloadGOG, hint: "安装") { gog.install(gg.id, name: gg.title) }
         }
     }
 
@@ -525,8 +525,8 @@ private struct GameDetailPage: View {
         if let job {
             jobControls(job)
         } else {
-            PrimaryButton(id: "game:install", title: epic.installer.hasStage(eg.id) ? "Resume download" : "Install",
-                          enabled: canDownloadEpic && epic.refusal(eg.id) == nil, hint: "Install") { epic.install(eg.id, name: eg.title) }
+            PrimaryButton(id: "game:install", title: epic.installer.hasStage(eg.id) ? "继续下载" : "安装",
+                          enabled: canDownloadEpic && epic.refusal(eg.id) == nil, hint: "安装") { epic.install(eg.id, name: eg.title) }
         }
     }
 
@@ -538,10 +538,10 @@ private struct GameDetailPage: View {
             jobControls(job)
         } else {
             let size = bnet.listing(p)?.sizes.map { " · " + ByteCount.format($0.download) } ?? ""
-            PrimaryButton(id: "game:install", title: bnet.hasStage(p) ? "Resume download" : "Install" + size,
-                          enabled: !installs.suspended && !bnet.sizing.contains(p), hint: "Install") { bnet.install(p) }
-            SecondaryButton(id: "game:region", systemImage: nil, title: "Region · \(bnet.region(p).rawValue)", glyph: .x,
-                            hint: "Store region") { bnet.pickRegion(p) }
+            PrimaryButton(id: "game:install", title: bnet.hasStage(p) ? "继续下载" : "安装" + size,
+                          enabled: !installs.suspended && !bnet.sizing.contains(p), hint: "安装") { bnet.install(p) }
+            SecondaryButton(id: "game:region", systemImage: nil, title: "地区 · \(bnet.region(p).rawValue)", glyph: .x,
+                            hint: "商店地区") { bnet.pickRegion(p) }
         }
     }
 
@@ -552,8 +552,8 @@ private struct GameDetailPage: View {
         if let job {
             jobControls(job)
         } else if let copy = xboxCopy {
-            PrimaryButton(id: "game:install", title: xbox.installer.hasStage(copy.id) ? "Resume download" : "Install",
-                          enabled: xbox.canInstall(copy.id) && !installs.suspended, hint: "Install") { xbox.install(copy) }
+            PrimaryButton(id: "game:install", title: xbox.installer.hasStage(copy.id) ? "继续下载" : "安装",
+                          enabled: xbox.canInstall(copy.id) && !installs.suspended, hint: "安装") { xbox.install(copy) }
         }
         #endif
     }
@@ -572,10 +572,10 @@ private struct GameDetailPage: View {
         .padding(.horizontal, 14)
         .frame(width: 230, height: 52)
         .background(PP.surface, in: RoundedRectangle(cornerRadius: 12))
-        .padItem("game:job", hint: job.isRunning || job.phase == .queued ? "Pause" : "Resume", cornerRadius: 12) {
+        .padItem("game:job", hint: job.isRunning || job.phase == .queued ? "暂停" : "继续", cornerRadius: 12) {
             if job.isRunning || job.phase == .queued { installs.pause(job.key) } else if canDownload || job.key.store != .steam { installs.resume(job.key) }
         }
-        SecondaryButton(id: "game:cancel", systemImage: "xmark", title: "Cancel", hint: job.kind == .repair ? "Cancel repair" : "Cancel download") {
+        SecondaryButton(id: "game:cancel", systemImage: "xmark", title: "取消", hint: job.kind == .repair ? "取消修复" : "取消下载") {
             installs.discard(job.key)
         }
     }
@@ -597,13 +597,13 @@ private struct GameDetailPage: View {
                 Text(why).foregroundStyle(.orange)
             } else if let job {
                 if case let .paused(reason?) = job.phase { Text(reason).foregroundStyle(.orange) }
-                if job.isRunning { Text("Keep Playport open: the download pauses when it leaves the screen.") }
+                if job.isRunning { Text("下载期间请保持 Playport 开启：离开屏幕后下载会暂停。") }
             } else if let package = xbox.package(copy.id) {
-                let parts = ["Download \(ByteCount.format(package.downloadSize))", "needs \(ByteCount.format(package.neededBytes))"]
-                    + [library.freeBytes.map { "\(ByteCount.format($0)) free" }].compactMap { $0 }
-                Text(parts.joined(separator: " · ") + " · keep Playport open while it downloads")
+                let parts = ["下载 \(ByteCount.format(package.downloadSize))", "需要 \(ByteCount.format(package.neededBytes))"]
+                    + [library.freeBytes.map { "可用 \(ByteCount.format($0))" }].compactMap { $0 }
+                Text(parts.joined(separator: " · ") + " · 下载期间请保持 Playport 开启")
             } else {
-                Text("Microsoft lists no Windows package for this game that Playport can install.").foregroundStyle(.orange)
+                Text("Microsoft 未提供此游戏可供 Playport 安装的 Windows 安装包。").foregroundStyle(.orange)
             }
         }
         #endif
@@ -612,8 +612,8 @@ private struct GameDetailPage: View {
     private var xboxFacts: [(String, String, Color?)] {
         #if !PLAYPORT_RELEASE
         guard let copy = xboxCopy, let package = xbox.package(copy.id) else { return [] }
-        return [("Access", copy.access == .owned ? "Owned" : "PC Game Pass", nil),
-                ("Download", ByteCount.format(package.downloadSize), nil), ("Needs", ByteCount.format(package.neededBytes), nil)]
+        return [("授权方式", copy.access == .owned ? "已拥有" : "PC Game Pass", nil),
+                ("下载大小", ByteCount.format(package.downloadSize), nil), ("所需空间", ByteCount.format(package.neededBytes), nil)]
         #else
         return []
         #endif
@@ -627,7 +627,7 @@ private struct GameDetailPage: View {
             } catch {
                 #if PLAYPORT_RELEASE
                 LibraryModel.log("play \(t.id) refused: \(error)")
-                playError = "Playport could not prepare this game's launch."
+                playError = "Playport 无法准备启动此游戏。"
                 #else
                 playError = "\(error)"
                 #endif
@@ -645,12 +645,12 @@ private struct GameDetailPage: View {
     private func pickVersion(_ g: SteamGame) {
         let installedBranch = installed.map { $0.branch ?? Branch.publicName }
         PadModal.shared.picker(
-            title: "Version", context: name,
-            note: installedBranch == nil ? "Install downloads the version chosen here."
-                : "Another version downloads over the one installed. Your saves are left alone.",
+            title: "版本", context: name,
+            note: installedBranch == nil ? "点击「安装」将下载此处所选的版本。"
+                : "选择其他版本将覆盖当前已安装的版本，你的游戏存档不会受影响。",
             options: branches.map { b in
                 PadOption(id: b.name, label: BranchLabel.text(b),
-                          detail: b.name == installedBranch ? "Installed" : g.info.installSize(branch: b.name).map(ByteCount.format))
+                          detail: b.name == installedBranch ? "已安装" : g.info.installSize(branch: b.name).map(ByteCount.format))
             },
             selected: selectedBranch) { picked in
             pickedBranch = picked
@@ -667,21 +667,21 @@ private struct GameDetailPage: View {
         VStack(alignment: .leading, spacing: 3) {
             if let p = installedBnet, let why = bnetInstalled.errors[p] { Text(why).foregroundStyle(.orange) }
             if let p = installedBnet, case let .unreachable(why)? = bnetInstalled.updates[p] {
-                Text("Couldn't check for an update: \(why)").foregroundStyle(.orange)
+                Text("无法检查更新：\(why)").foregroundStyle(.orange)
             }
             if let t {
                 if launch.spent {
                     Text(JitProvider.inLiveContainer
-                         ? "Playport cannot start another game in this session. Close it and launch it again from LiveContainer with JIT to play again."
-                         : "Playport cannot start another game in this session. Close it and reopen it from the Home Screen to play again.")
+                         ? "Playport 无法在当前会话中启动另一个游戏。请关闭应用，并从 LiveContainer 使用 JIT 重新启动以继续游玩。"
+                         : "Playport 无法在当前会话中启动另一个游戏。请关闭应用，并从主屏幕重新打开以继续游玩。")
                 } else if !t.canPlay {
-                    Text("No Windows executable in this folder.").foregroundStyle(.orange)
+                    Text("此文件夹中未找到 Windows 可执行文件。").foregroundStyle(.orange)
                 } else if let job {
                     if case let .paused(reason?) = job.phase { Text(reason).foregroundStyle(.orange) }
                     // An update Playport queued by itself holds Play too: say how to play now.
-                    Text(job.kind == .repair ? "Play is available once the repair finishes, or after Cancel."
-                         : job.record.automatic ? "Playport queued this update by itself. Play is available once it finishes, or after Cancel: it waits for Steam's next version then."
-                         : "Play is available once the update finishes, or after Cancel.")
+                    Text(job.kind == .repair ? "修复完成后即可开始游戏，或点击「取消」直接游玩。"
+                         : job.record.automatic ? "Playport 已自动将此更新加入队列。更新完成后即可开始游戏；也可点击「取消」直接游玩（之后将在 Steam 发布下一版本时再更新）。"
+                         : "更新完成后即可开始游戏，或点击「取消」直接游玩。")
                 } else {
                     #if !PLAYPORT_RELEASE
                     if let lapse = xboxLapses.notice(t.key) { Text(lapse).foregroundStyle(.orange) }
@@ -691,7 +691,7 @@ private struct GameDetailPage: View {
                     }
                     #endif
                     MemoryWarning()
-                    if installs.isBusy { Text("Starting a game pauses the download. It goes on when Playport reopens after the game.") }
+                    if installs.isBusy { Text("启动游戏会暂停当前下载，游戏结束重新打开 Playport 后将继续下载。") }
                     controllerLine(t)
                 }
                 // Its last Play was ended for memory (PlayportKit MemoryKill): said, never a reason not to play.
@@ -719,9 +719,9 @@ private struct GameDetailPage: View {
         if let p = BattleNet.product(t.key) {
             Text(BattleNetPlay.notice(p).text).foregroundStyle(.orange)
             if let at = t.riskNoticeAccepted {
-                Text("You accepted this on \(at.formatted(date: .abbreviated, time: .omitted)).")
+                Text("你已于 \(at.formatted(date: .abbreviated, time: .omitted)) 确认接受此提示。")
             } else {
-                Text("Play asks you to accept it first.")
+                Text("首次点击「开始游戏」前需要你确认接受此提示。")
             }
         }
     }
@@ -730,12 +730,12 @@ private struct GameDetailPage: View {
     private func controllerLine(_ t: InstalledTitle) -> some View {
         if Panel.isFoldable, launchSettings.settings(for: t.id).virtualPad == true {
             // The on-screen controller is a pad of its own (VirtualGamepad.swift).
-            Text("The virtual gamepad is on for this game.")
+            Text("此游戏已开启虚拟手柄。")
         } else if controllers == 0 {
-            Text("No controller is connected. Connect it now: a game may not notice one connected later.")
+            Text("未连接手柄。请现在连接手柄：部分游戏可能无法识别启动后才连接的手柄。")
                 .foregroundStyle(.orange)
         } else {
-            Text("Your controller is connected.")
+            Text("手柄已连接。")
         }
     }
 
@@ -744,17 +744,17 @@ private struct GameDetailPage: View {
         if installs.suspended {
             Text(InstallCopy.afterLaunch)
         } else if case let .offline(_, reason) = model.state {
-            Text("Steam can't be reached (\(reason)). Downloads resume once it can.")
+            Text("无法连接 Steam（\(reason)）。恢复连接后将继续下载。")
         } else if model.state.account == nil || model.state == .expired {
-            Text("Sign in to Steam to download.")
+            Text("请先登录 Steam 以下载游戏。")
         } else if let job {
             if case let .paused(reason?) = job.phase { Text(reason).foregroundStyle(.orange) }
-            if job.isRunning { Text("Keep Playport open: the download pauses when it leaves the screen.") }
+            if job.isRunning { Text("下载期间请保持 Playport 开启：离开屏幕后下载会暂停。") }
         } else {
-            let need = g.info.installSize(branch: selectedBranch).map { "Needs \(ByteCount.format($0))" }
-            let free = library.freeBytes.map { "\(ByteCount.format($0)) free" }
+            let need = g.info.installSize(branch: selectedBranch).map { "需要 \(ByteCount.format($0))" }
+            let free = library.freeBytes.map { "可用 \(ByteCount.format($0))" }
             let parts = [need, free].compactMap { $0 }
-            if !parts.isEmpty { Text(parts.joined(separator: " · ") + " · keep Playport open while it downloads") }
+            if !parts.isEmpty { Text(parts.joined(separator: " · ") + " · 下载期间请保持 Playport 开启") }
         }
     }
 
@@ -764,64 +764,64 @@ private struct GameDetailPage: View {
             Text(InstallCopy.afterLaunch)
         } else if let job {
             if case let .paused(reason?) = job.phase { Text(reason).foregroundStyle(.orange) }
-            if job.isRunning { Text("Keep Playport open: the download pauses when it leaves the screen.") }
-            Text("Play is available once the download finishes.")
+            if job.isRunning { Text("下载期间请保持 Playport 开启：离开屏幕后下载会暂停。") }
+            Text("下载完成后即可开始游戏。")
         } else {
             if let why = bnet.refusals[p] ?? bnet.spaceRefusal(p) { Text(why).foregroundStyle(.orange) }
             if let why = bnet.sizeErrors[p] ?? bnet.error { Text(why).foregroundStyle(.orange) }
             if bnet.sizing.contains(p) {
-                Text("Asking Blizzard for the size in \(BattleNetStore.label(bnet.region(p)))…")
+                Text("正在向暴雪查询 \(BattleNetStore.label(bnet.region(p))) 地区的安装包大小…")
             } else {
-                let need = bnet.needed(p).map { "Needs \(ByteCount.format($0))" }
-                let free = library.freeBytes.map { "\(ByteCount.format($0)) free" }
+                let need = bnet.needed(p).map { "需要 \(ByteCount.format($0))" }
+                let free = library.freeBytes.map { "可用 \(ByteCount.format($0))" }
                 let parts = [need, free].compactMap { $0 }
-                if !parts.isEmpty { Text(parts.joined(separator: " · ") + " · keep Playport open while it downloads") }
+                if !parts.isEmpty { Text(parts.joined(separator: " · ") + " · 下载期间请保持 Playport 开启") }
             }
-            Text("No Battle.net account is needed to install. World of Warcraft asks you to sign in when it starts.")
+            Text("安装无需登录 Battle.net 账号。World of Warcraft 会在启动后提示你登录。")
         }
     }
 
     private func facts(_ t: InstalledTitle?, _ g: SteamGame?) -> some View {
         let source: LibrarySource = key?.store ?? (appID == nil ? .local : .steam)
         var links: [String: FactLink] = [:]
-        var rows: [(String, String, Color?)] = [("Store", source.label, nil)]
+        var rows: [(String, String, Color?)] = [("商店", source.label, nil)]
         if let t {
-            if t.badge != .ready { rows.append(("State", t.badge.rawValue, .orange)) }
-            rows.append(("Last played", t.lastPlayed.map { $0.formatted(.relative(presentation: .named)) } ?? "Never", nil))
-            if let played = t.playSeconds { rows.append(("Play time", PlayTime.format(played), nil)) }
+            if t.badge != .ready { rows.append(("状态", t.badge.rawValue, .orange)) }
+            rows.append(("上次游玩", t.lastPlayed.map { $0.formatted(.relative(presentation: .named)) } ?? "从未", nil))
+            if let played = t.playSeconds { rows.append(("游玩时长", PlayTime.format(played), nil)) }
             if t.source == .installed, let b = t.branch, b != Branch.publicName {
-                rows.append(("Version", BranchLabel.text(b, in: g?.info), nil))
+                rows.append(("版本", BranchLabel.text(b, in: g?.info), nil))
             }
-            if t.appID != nil { rows.append(("Cloud saves", cloudStatus(t).0, cloudStatus(t).1)) }
-            rows.append(("On this phone", t.sizeBytes.map(ByteCount.format) ?? "Unknown", nil))
+            if t.appID != nil { rows.append(("云存档", cloudStatus(t).0, cloudStatus(t).1)) }
+            rows.append(("占用空间", t.sizeBytes.map(ByteCount.format) ?? "未知", nil))
             if let p = installedBnet {
                 let now = bnetInstalled.current[p]
-                rows.append(("Region", bnetInstalled.changingRegion.contains(p) ? "Changing…" : now.map { BattleNetStore.label($0.region) } ?? "…", nil))
-                rows.append(("Language", now.map { BattleNetInstalled.name($0.locale) ?? $0.locale } ?? "…", nil))
+                rows.append(("地区", bnetInstalled.changingRegion.contains(p) ? "正在切换…" : now.map { BattleNetStore.label($0.region) } ?? "…", nil))
+                rows.append(("语言", now.map { BattleNetInstalled.name($0.locale) ?? $0.locale } ?? "…", nil))
                 links = bnetLinks(p, now)
                 switch bnetInstalled.updates[p] {
                 case nil: break
-                case .checking?: rows.append(("Update", "Checking…", nil))
-                case let .current(v)?: rows.append(("Update", "Up to date · \(v)", nil))
+                case .checking?: rows.append(("更新", "正在检查…", nil))
+                case let .current(v)?: rows.append(("更新", "已是最新 · \(v)", nil))
                 // At the installed build: an install from before decision 0177 getting the x64 client.
                 case let .available(from, to, bytes)?:
-                    rows.append(("Update", (from == to ? "x64 client" : "\(from) → \(to)") + " · \(ByteCount.format(bytes))", .orange))
-                case .unreachable?: rows.append(("Update", "Couldn't check", .orange))
+                    rows.append(("更新", (from == to ? "x64 客户端" : "\(from) → \(to)") + " · \(ByteCount.format(bytes))", .orange))
+                case .unreachable?: rows.append(("更新", "无法检查", .orange))
                 }
             }
         } else if let g {
-            if let s = g.info.installSize(branch: selectedBranch) { rows.append(("Download", ByteCount.format(s), nil)) }
-            if branches.count > 1 { rows.append(("Version", BranchLabel.text(selectedBranch, in: g.info), nil)) }
+            if let s = g.info.installSize(branch: selectedBranch) { rows.append(("下载大小", ByteCount.format(s), nil)) }
+            if branches.count > 1 { rows.append(("版本", BranchLabel.text(selectedBranch, in: g.info), nil)) }
             if let s = stats, !s.schema.achievements.isEmpty {
-                rows.append(("Achievements", "\(s.unlockedCount) of \(s.schema.achievements.count)", nil))
+                rows.append(("成就", "\(s.unlockedCount) / \(s.schema.achievements.count)", nil))
             }
         } else if let p = bnetProduct {
             let l = bnet.listing(p)
-            if let s = l?.sizes { rows.append(("Download", ByteCount.format(s.download), nil)) }
-            if let n = bnet.needed(p) { rows.append(("Space needed", ByteCount.format(n), nil)) }
-            rows.append(("Region", BattleNetStore.label(bnet.region(p)), nil))
-            rows.append(("Language", bnet.locale(p), nil))
-            if let v = l?.version { rows.append(("Version", v, nil)) }
+            if let s = l?.sizes { rows.append(("下载大小", ByteCount.format(s.download), nil)) }
+            if let n = bnet.needed(p) { rows.append(("所需空间", ByteCount.format(n), nil)) }
+            rows.append(("地区", BattleNetStore.label(bnet.region(p)), nil))
+            rows.append(("语言", bnet.locale(p), nil))
+            if let v = l?.version { rows.append(("版本", v, nil)) }
         } else if xboxTitle != nil {
             rows += xboxFacts
         }
@@ -848,10 +848,10 @@ private struct GameDetailPage: View {
     private func bnetLinks(_ p: BattleNetProduct, _ now: BattleNetInstalled.Choice?) -> [String: FactLink] {
         let idle = now != nil && job == nil && !launch.running
         return [
-            "Region": FactLink(id: "game:region", hint: "Store region", enabled: idle && !bnetInstalled.changingRegion.contains(p)) {
+            "地区": FactLink(id: "game:region", hint: "商店地区", enabled: idle && !bnetInstalled.changingRegion.contains(p)) {
                 bnetInstalled.pickRegion(p)
             },
-            "Language": FactLink(id: "game:language", hint: "Language", enabled: idle && !installs.suspended) {
+            "语言": FactLink(id: "game:language", hint: "语言", enabled: idle && !installs.suspended) {
                 bnetInstalled.pickLanguage(p, downloads: installs)
             },
         ]
@@ -882,15 +882,15 @@ private struct GameDetailPage: View {
 
     /// Steam Cloud for the facts card and the options' row.
     private func cloudStatus(_ t: InstalledTitle) -> (String, Color?) {
-        guard SteamAccountModel.cloudOn else { return ("Off in Settings", nil) }
-        guard launchSettings.settings(for: t.id).cloudSync ?? true else { return ("Off", nil) }
-        guard let app = t.appID else { return ("Not synced", nil) }
-        if model.cloudSyncing.contains(app) { return ("Syncing…", nil) }
-        if model.cloudErrors[app] != nil { return ("Not synced", .orange) }
-        guard let c = model.cloud[app] else { return ("Not synced yet", nil) }
-        if !c.conflicts.isEmpty { return ("\(c.conflicts.count) to settle", .orange) }
-        if !c.failed.isEmpty { return ("\(c.failed.count) not synced", .orange) }
-        return ("Up to date", PP.ok)
+        guard SteamAccountModel.cloudOn else { return ("已在设置中关闭", nil) }
+        guard launchSettings.settings(for: t.id).cloudSync ?? true else { return ("已关闭", nil) }
+        guard let app = t.appID else { return ("未同步", nil) }
+        if model.cloudSyncing.contains(app) { return ("正在同步…", nil) }
+        if model.cloudErrors[app] != nil { return ("未同步", .orange) }
+        guard let c = model.cloud[app] else { return ("尚未同步", nil) }
+        if !c.conflicts.isEmpty { return ("\(c.conflicts.count) 个冲突待处理", .orange) }
+        if !c.failed.isEmpty { return ("\(c.failed.count) 个未同步", .orange) }
+        return ("已同步", PP.ok)
     }
 
     private var signedIn: Bool {
@@ -908,11 +908,11 @@ private struct GameDetailPage: View {
     private func updateX(_ t: InstalledTitle?) {
         switch xKey(t) {
         case "options":
-            GamePageState.shared.x = .init(label: "Game options") { navigation.gamePanels = [.options] }
+            GamePageState.shared.x = .init(label: "游戏选项") { navigation.gamePanels = [.options] }
         case "version":
-            GamePageState.shared.x = .init(label: "Version") { if let g = game { pickVersion(g) } }
+            GamePageState.shared.x = .init(label: "版本") { if let g = game { pickVersion(g) } }
         case "region":
-            GamePageState.shared.x = .init(label: "Store region") { if let p = bnetProduct { bnet.pickRegion(p) } }
+            GamePageState.shared.x = .init(label: "商店地区") { if let p = bnetProduct { bnet.pickRegion(p) } }
         default:
             GamePageState.shared.x = nil
         }
@@ -962,7 +962,7 @@ private struct GameDetailPage: View {
 
     private func optionsPanel(_ t: InstalledTitle, _ g: SteamGame?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Game options").font(PP.display(22)).foregroundStyle(PP.text)
+            Text("游戏选项").font(PP.display(22)).foregroundStyle(PP.text)
                 .padding(.horizontal, 14).padding(.bottom, 2)
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
@@ -1013,7 +1013,7 @@ private struct GameDetailPage: View {
         // choice and Settings': a row it sets shows its marker, and Y goes back to it.
         let compat = launchSettings.compat(for: t.id)
         let cs = compat?.settings
-        let from: (Bool) -> String = { $0 ? ", for this game's compatibility" : ", from Settings" }
+        let from: (Bool) -> String = { $0 ? "，针对此游戏兼容适配" : "，来自全局设置" }
         // The aspect ratio and the resolution are separate choices (decision 0073): every shape
         // offers the same resolutions, each computed for it.
         let ownAspect = own.aspect.flatMap(ScreenAspect.init(rawValue:))
@@ -1026,64 +1026,64 @@ private struct GameDetailPage: View {
                                    name: LaunchSettingsText.frameLimit)
         let inheritedGraphics = launchSettings.effective(for: t, inheritingGraphics: true).graphics
         let d3d = OptionValue.of(own: own.graphics, compat: cs?.graphics, inherited: inheritedGraphics, name: LaunchSettingsText.graphics)
-        PadSectionHeader(text: "Graphics").id("graphics")
+        PadSectionHeader(text: "画面").id("graphics")
         if let compat, compat.settings != LaunchSettings() {
             // On the page for touch and in the ring for a controller: what the marker means. An entry
             // that sets only the on-screen layout says so in Controls (GameControlsOptionRows).
-            PadRow(id: "opt:compat", title: "\(OptionValue.compatMarker) Set for this game's compatibility",
-                   subtitle: compat.reason + " Your own choice on a row below wins; Y on that row comes back to this.",
-                   subtitleLines: nil, style: .plain, hint: "Info") {}
+            PadRow(id: "opt:compat", title: "\(OptionValue.compatMarker) 已为此游戏进行兼容预设",
+                   subtitle: compat.reason + " 你在下方选项中的手动设置优先；按 Y 可恢复为此兼容预设。",
+                   subtitleLines: nil, style: .plain, hint: "说明") {}
         }
-        PadRow(id: "opt:aspect", title: "Aspect ratio", value: aspect.text, accessory: .chevron, changed: aspect.changed,
+        PadRow(id: "opt:aspect", title: "画面比例", value: aspect.text, accessory: .chevron, changed: aspect.changed,
                style: .plain, reset: aspect.changed ? { settings.wrappedValue.aspect = nil } : nil) {
             PadModal.shared.picker(
-                title: "Aspect ratio", context: "\(context) · Graphics", note: LaunchSettingsText.nextStart,
-                options: [PadOption(id: "", label: "Default",
+                title: "画面比例", context: "\(context) · 画面", note: LaunchSettingsText.nextStart,
+                options: [PadOption(id: "", label: "默认",
                                     detail: LaunchSettingsText.aspect(compatAspect ?? inherited.aspect) + from(compatAspect != nil))]
                     + ScreenAspect.allCases.map { a in
                         PadOption(id: a.rawValue, label: LaunchSettingsText.aspect(a), detail: LaunchSettingsText.aspectDetail(a))
                     },
                 selected: own.aspect ?? "") { settings.wrappedValue.aspect = $0.isEmpty ? nil : $0 }
         }
-        PadRow(id: "opt:screen", title: "Resolution", value: screen.text, accessory: .chevron, changed: screen.changed,
+        PadRow(id: "opt:screen", title: "分辨率", value: screen.text, accessory: .chevron, changed: screen.changed,
                style: .plain, reset: screen.changed ? { settings.wrappedValue.screen = nil } : nil) {
             let resolutions = LaunchSettingsText.screens(shape)
             let native = resolutions.first == "native"
             PadModal.shared.picker(
-                title: "Resolution", context: "\(context) · Graphics", note: LaunchSettingsText.nextStart,
-                options: [PadOption(id: "", label: "Default", detail: screenName(cs?.screen ?? inherited.screen) + from(cs?.screen != nil))]
+                title: "分辨率", context: "\(context) · 画面", note: LaunchSettingsText.nextStart,
+                options: [PadOption(id: "", label: "默认", detail: screenName(cs?.screen ?? inherited.screen) + from(cs?.screen != nil))]
                     + resolutions.map { spec in
                         PadOption(id: spec, label: screenName(spec),
-                                  detail: spec == "native" && native ? "Sharpest, most power"
-                                      : spec == LaunchSettings.defaultScreen ? "Longest battery" : LaunchSettingsText.pixels(spec, shape))
+                                  detail: spec == "native" && native ? "最清晰，耗电最高"
+                                      : spec == LaunchSettings.defaultScreen ? "续航最佳" : LaunchSettingsText.pixels(spec, shape))
                     },
                 selected: own.screen ?? "") { settings.wrappedValue.screen = $0.isEmpty ? nil : $0 }
         }
-        PadRow(id: "opt:frameLimit", title: "Frame rate limit", value: limit.text, accessory: .chevron, changed: limit.changed,
+        PadRow(id: "opt:frameLimit", title: "帧率限制", value: limit.text, accessory: .chevron, changed: limit.changed,
                style: .plain, reset: limit.changed ? { settings.wrappedValue.frameLimit = nil } : nil) {
             PadModal.shared.picker(
-                title: "Frame rate limit", context: "\(context) · Graphics", note: LaunchSettingsText.nextStart,
-                options: [PadOption(id: "", label: "Default", detail: "\(LaunchSettingsText.frameLimit(inherited.frameLimit)), from Settings")]
+                title: "帧率限制", context: "\(context) · 画面", note: LaunchSettingsText.nextStart,
+                options: [PadOption(id: "", label: "默认", detail: "\(LaunchSettingsText.frameLimit(inherited.frameLimit))，来自全局设置")]
                     + LaunchSettingsText.frameLimits.map { PadOption(id: String($0), label: LaunchSettingsText.frameLimit($0)) }
-                    + [PadOption(id: "0", label: "Off", detail: "As fast as the screen allows")],
+                    + [PadOption(id: "0", label: "关闭", detail: "按屏幕支持的最高速度运行")],
                 selected: own.frameLimit.map(String.init) ?? "") { settings.wrappedValue.frameLimit = Int($0) }
         }
         PadRow(id: "opt:graphics", title: "Direct3D", value: d3d.text, accessory: .chevron, changed: d3d.changed,
                style: .plain, reset: d3d.changed ? { settings.wrappedValue.graphics = nil } : nil) {
             PadModal.shared.picker(
-                title: "Direct3D", context: "\(context) · Graphics",
+                title: "Direct3D", context: "\(context) · 画面",
                 note: LaunchSettingsText.nextStart + " " + LaunchSettingsText.graphicsDetection(t) + " " + LaunchSettingsText.graphicsFooter,
-                options: [PadOption(id: "", label: "Default", detail: "\(LaunchSettingsText.graphics(inheritedGraphics)), from Settings or game detection")]
+                options: [PadOption(id: "", label: "默认", detail: "\(LaunchSettingsText.graphics(inheritedGraphics))，来自全局设置或游戏自动检测")]
                     + GraphicsBackend.allCases.filter { Manifest.has($0) || own.graphics == $0 }.map {
                         PadOption(id: $0.rawValue, label: LaunchSettingsText.graphics($0), detail: LaunchSettingsText.graphicsDetail($0))
                     },
                 selected: own.graphics?.rawValue ?? "") { settings.wrappedValue.graphics = GraphicsBackend(rawValue: $0) }
         }
         let args = own.arguments.trimmingCharacters(in: .whitespaces)
-        PadRow(id: "opt:arguments", title: "Launch arguments", value: args.isEmpty ? "None" : args, accessory: .chevron,
-               changed: !args.isEmpty, style: .plain, hint: "Edit",
+        PadRow(id: "opt:arguments", title: "启动参数", value: args.isEmpty ? "无" : args, accessory: .chevron,
+               changed: !args.isEmpty, style: .plain, hint: "编辑",
                reset: args.isEmpty ? nil : { settings.wrappedValue.arguments = "" }) {
-            PadModal.shared.keyboard(title: "Launch arguments", text: own.arguments, placeholder: "For example -DX12",
+            PadModal.shared.keyboard(title: "启动参数", text: own.arguments, placeholder: "例如 -DX12",
                                      maxLength: 200) { settings.wrappedValue.arguments = $0 }
         }
         // A foldable's open panel held upright: the game above, a controller under it (VirtualGamepad.swift).
@@ -1091,9 +1091,9 @@ private struct GameDetailPage: View {
             let padOn = own.virtualPad ?? false
             let layouts = PadLayoutStore.shared.all
             let off = { settings.wrappedValue.virtualPad = nil; settings.wrappedValue.virtualPadLayout = nil }
-            PadRow(id: "opt:virtualPad", title: "Virtual gamepad",
-                   subtitle: "Phone open and upright: the game above, a controller below",
-                   accessory: .toggle(padOn), changed: padOn, style: .plain, hint: padOn ? "Turn off" : "Turn on",
+            PadRow(id: "opt:virtualPad", title: "虚拟手柄",
+                   subtitle: "手机展开竖握时：上方显示游戏画面，下方显示手柄",
+                   accessory: .toggle(padOn), changed: padOn, style: .plain, hint: padOn ? "关闭" : "开启",
                    reset: padOn ? off : nil) {
                 // Turned on, the game keeps the default layout of now (Settings › Virtual gamepad).
                 if padOn { off() } else {
@@ -1103,13 +1103,13 @@ private struct GameDetailPage: View {
             }
             if padOn {
                 let current = layouts.layout(own.virtualPadLayout)
-                PadRow(id: "opt:virtualPadLayout", title: "Gamepad layout", value: current.name, accessory: .chevron,
+                PadRow(id: "opt:virtualPadLayout", title: "手柄布局", value: current.name, accessory: .chevron,
                        style: .plain) {
                     PadModal.shared.picker(
-                        title: "Gamepad layout", context: "\(context) · Graphics",
-                        note: "Settings › Virtual gamepad edits them; in the game, hold ⌂.",
+                        title: "手柄布局", context: "\(context) · 画面",
+                        note: "可在「设置 › 虚拟手柄」中编辑布局；在游戏内可长按 ⌂ 键调整。",
                         options: layouts.layouts.map { PadOption(id: $0.id, label: $0.name,
-                                                                 detail: $0.id == layouts.defaultID ? "Default" : nil) },
+                                                                 detail: $0.id == layouts.defaultID ? "默认" : nil) },
                         selected: current.id) { settings.wrappedValue.virtualPadLayout = $0 }
                 }
             }
@@ -1120,28 +1120,28 @@ private struct GameDetailPage: View {
     @ViewBuilder
     private func gameRows(_ t: InstalledTitle, _ g: SteamGame?) -> some View {
         let settings = launchSettings.binding(for: t.id)
-        PadSectionHeader(text: "Game").id("game")
+        PadSectionHeader(text: "游戏").id("game")
         if let g, t.source == .installed, branches.count > 1 {
-            PadRow(id: "opt:version", title: "Version", value: BranchLabel.text(t.branch, in: g.info), accessory: .chevron,
+            PadRow(id: "opt:version", title: "版本", value: BranchLabel.text(t.branch, in: g.info), accessory: .chevron,
                    style: .plain) { if job == nil { pickVersion(g) } }
         }
         if let app = t.appID {
             let cloudOn = settings.wrappedValue.cloudSync ?? true
             let cloud = cloudStatus(t)
             if SteamAccountModel.cloudOn {
-                PadRow(id: "opt:cloud", title: "Cloud saves", subtitle: cloudOn ? cloudDetail(app) : nil,
-                       accessory: .toggle(cloudOn), changed: !cloudOn, style: .plain, hint: cloudOn ? "Turn off" : "Turn on",
+                PadRow(id: "opt:cloud", title: "云存档", subtitle: cloudOn ? cloudDetail(app) : nil,
+                       accessory: .toggle(cloudOn), changed: !cloudOn, style: .plain, hint: cloudOn ? "关闭" : "开启",
                        reset: cloudOn ? nil : { settings.wrappedValue.cloudSync = nil }) {
                     settings.wrappedValue.cloudSync = cloudOn ? false : nil
                 }
             } else {
-                PadRow(id: "opt:cloud", title: "Cloud saves", value: cloud.0, style: .plain, hint: "Settings") {}
+                PadRow(id: "opt:cloud", title: "云存档", value: cloud.0, style: .plain, hint: "设置") {}
             }
             if cloudOn, SteamAccountModel.cloudOn, let c = model.cloud[app], !c.conflicts.isEmpty {
                 // One choice for the game's saves, as Play asks it (UI/CloudConflictView.swift).
-                PadRow(id: "opt:conflict", title: "Choose which save to keep",
-                       subtitle: "\(c.conflicts.count) file\(c.conflicts.count == 1 ? "" : "s") changed here and on Steam",
-                       value: "Choose", accessory: .chevron, style: .plain, hint: "Choose") {
+                PadRow(id: "opt:conflict", title: "选择要保留的存档",
+                       subtitle: "\(c.conflicts.count) 个文件在本地与 Steam 云端均有改动",
+                       value: "选择", accessory: .chevron, style: .plain, hint: "选择") {
                     guard !model.cloudSyncing.contains(app), !launch.running else { return }
                     library.askCloud(t, app, c.conflicts, thenPlay: false)
                 }
@@ -1150,11 +1150,11 @@ private struct GameDetailPage: View {
         if t.store != .steam, t.source != .cohort { localRows(t) }
         filesRows(t)
         if let s = stats, !s.schema.achievements.isEmpty {
-            PadRow(id: "opt:achievements", title: "Achievements", value: "\(s.unlockedCount) of \(s.schema.achievements.count)",
-                   accessory: .chevron, style: .plain, hint: "Open") { navigation.gamePanels.append(.achievements) }
+            PadRow(id: "opt:achievements", title: "成就", value: "\(s.unlockedCount) / \(s.schema.achievements.count)",
+                   accessory: .chevron, style: .plain, hint: "打开") { navigation.gamePanels.append(.achievements) }
         }
-        PadRow(id: "opt:report", title: "Report a problem", value: "Shares a zip of the logs", accessory: .chevron, style: .plain,
-               hint: "Share") { ProblemReport.share(t) }
+        PadRow(id: "opt:report", title: "导出问题报告", value: "分享日志压缩包", accessory: .chevron, style: .plain,
+               hint: "分享") { ProblemReport.share(t) }
         uninstallRow(t)
     }
 
@@ -1163,32 +1163,32 @@ private struct GameDetailPage: View {
     @ViewBuilder
     private func localRows(_ t: InstalledTitle) -> some View {
         let machine = t.executableMachine.map(Self.machineName)
-        PadRow(id: "opt:executable", title: "Executable",
+        PadRow(id: "opt:executable", title: "可执行文件",
                subtitle: [machine, t.direct3D.flatMap { $0.apis.isEmpty ? nil : $0.summary }].compactMap { $0 }.joined(separator: " · "),
-               value: t.executable ?? "None found", accessory: .chevron, changed: t.chosenExecutable != nil, style: .plain,
-               hint: "Choose", reset: t.chosenExecutable == nil ? nil : { library.setExecutable(t.id, nil) }) {
+               value: t.executable ?? "未找到", accessory: .chevron, changed: t.chosenExecutable != nil, style: .plain,
+               hint: "选择", reset: t.chosenExecutable == nil ? nil : { library.setExecutable(t.id, nil) }) {
             let dir = LibraryModel.paths.games.appendingPathComponent(t.installDir, isDirectory: true)
             let found = Adoption.candidates(in: dir, folder: t.installDir)
             guard !found.isEmpty else { return }
             PadModal.shared.picker(
-                title: "Executable", context: "\(context) · Game",
-                note: "What Play starts. The first is Playport's own pick; installers, tools and crash reporters are last.",
-                options: [PadOption(id: "", label: "Default", detail: found.first.map { "\($0), Playport's pick" })]
+                title: "可执行文件", context: "\(context) · 游戏",
+                note: "点击「开始游戏」时启动的程序。首项为 Playport 自动推荐项；安装程序、辅助工具与崩溃报告器排在最后。",
+                options: [PadOption(id: "", label: "默认", detail: found.first.map { "\($0)，Playport 推荐" })]
                     + found.map { PadOption(id: $0, label: $0) },
                 selected: t.chosenExecutable ?? "") { library.setExecutable(t.id, $0.isEmpty ? nil : $0) }
         }
-        PadRow(id: "opt:name", title: "Name", value: t.name, accessory: .chevron, changed: t.displayName != nil, style: .plain,
-               hint: "Edit", reset: t.displayName == nil ? nil : { library.rename(t.id, nil) }) {
-            PadModal.shared.keyboard(title: "Name", text: t.name, placeholder: t.installDir, maxLength: 80) { library.rename(t.id, $0) }
+        PadRow(id: "opt:name", title: "名称", value: t.name, accessory: .chevron, changed: t.displayName != nil, style: .plain,
+               hint: "编辑", reset: t.displayName == nil ? nil : { library.rename(t.id, nil) }) {
+            PadModal.shared.keyboard(title: "名称", text: t.name, placeholder: t.installDir, maxLength: 80) { library.rename(t.id, $0) }
         }
     }
 
     static func machineName(_ m: UInt16) -> String {
         switch m {
         case 0x8664: "x86-64"
-        case 0x14C: "32-bit x86"
+        case 0x14C: "32 位 x86"
         case 0xAA64: "ARM64"
-        default: String(format: "machine 0x%04X", m)
+        default: String(format: "架构 0x%04X", m)
         }
     }
 
@@ -1196,46 +1196,46 @@ private struct GameDetailPage: View {
     private func filesRows(_ t: InstalledTitle) -> some View {
         let checking = library.verifying.contains(t.id)
         let canCheck = library.canVerify(t) && !launch.running && !library.removing.contains(t.id) && job == nil
-        PadRow(id: "opt:files", title: "Check game files", subtitle: verifyError(t), value: filesValue(t, checking: checking),
-               style: .plain, hint: "Check") {
+        PadRow(id: "opt:files", title: "校验游戏文件", subtitle: verifyError(t), value: filesValue(t, checking: checking),
+               style: .plain, hint: "校验") {
             if canCheck, !checking { library.verify(t.id) }
         }
         if t.source == .installed, let app = t.appID, job == nil, !checking, t.lastVerification.map({ !$0.ok }) ?? false {
-            PadRow(id: "opt:repair", title: "Repair from Steam",
-                   subtitle: (t.lastVerification?.depotsToRecheck ?? 0) > 0 ? "Downloads what Steam installs that is missing"
-                                                                            : "Downloads the damaged files again",
-                   accessory: .chevron, style: .plain, hint: "Repair") {
+            PadRow(id: "opt:repair", title: "从 Steam 修复",
+                   subtitle: (t.lastVerification?.depotsToRecheck ?? 0) > 0 ? "重新下载缺失的 Steam 安装内容"
+                                                                            : "重新下载已损坏的文件",
+                   accessory: .chevron, style: .plain, hint: "修复") {
                 if !installs.suspended, !launch.running { installs.repair(app, name: t.name) }
             }
         }
         if t.store == .epic, job == nil, !checking, t.lastVerification.map({ !$0.ok }) ?? false {
-            PadRow(id: "opt:repair", title: "Repair from Epic Games", subtitle: "Downloads the damaged files again",
-                   accessory: .chevron, style: .plain, hint: "Repair") {
+            PadRow(id: "opt:repair", title: "从 Epic Games 修复", subtitle: "重新下载已损坏的文件",
+                   accessory: .chevron, style: .plain, hint: "修复") {
                 if !installs.suspended, !launch.running { epic.install(t.key.id, name: t.name, kind: .repair) }
             }
         }
         if t.store == .gog, job == nil, !checking, t.lastVerification.map({ !$0.ok }) ?? false {
-            PadRow(id: "opt:repair", title: "Repair from GOG", subtitle: "Downloads the damaged files again",
-                   accessory: .chevron, style: .plain, hint: "Repair") {
+            PadRow(id: "opt:repair", title: "从 GOG 修复", subtitle: "重新下载已损坏的文件",
+                   accessory: .chevron, style: .plain, hint: "修复") {
                 if !installs.suspended, !launch.running { gog.install(t.key.id, name: t.name, kind: .repair) }
             }
         }
     }
 
     private func filesValue(_ t: InstalledTitle, checking: Bool) -> String {
-        if checking { return "Checking…" }
-        if !library.canVerify(t) { return "Store installs only" }
-        guard let v = t.lastVerification else { return "Not checked yet" }
+        if checking { return "正在校验…" }
+        if !library.canVerify(t) { return "仅限商店安装的游戏" }
+        guard let v = t.lastVerification else { return "尚未校验" }
         let when = v.date.formatted(.relative(presentation: .named))
-        if v.bad == 0, (v.depotsToRecheck ?? 0) > 0 { return "Content to check with Steam" }
-        return v.ok ? "Last OK \(when)" : "\(v.bad) of \(v.files) damaged"
+        if v.bad == 0, (v.depotsToRecheck ?? 0) > 0 { return "需与 Steam 核对内容" }
+        return v.ok ? "上次校验正常（\(when)）" : "\(v.bad) / \(v.files) 个文件损坏"
     }
 
     private func verifyError(_ t: InstalledTitle) -> String? {
         guard let e = library.verifyErrors[t.id] else { return nil }
         #if PLAYPORT_RELEASE
         _ = e
-        return "The check could not finish. Try again."
+        return "文件校验未能完成，请重试。"
         #else
         return e
         #endif
@@ -1245,25 +1245,25 @@ private struct GameDetailPage: View {
     private func uninstallRow(_ t: InstalledTitle) -> some View {
         let removing = library.removing.contains(t.id)
         let downloading = installs.jobs[t.key]?.isRunning ?? false
-        PadRow(id: "opt:uninstall", title: removing ? "Uninstalling…" : "Uninstall", subtitle: removeError(t),
-               value: t.sizeBytes.map { "Frees \(ByteCount.format($0))" }, destructive: true, style: .plain, hint: "Uninstall") {
+        PadRow(id: "opt:uninstall", title: removing ? "正在卸载…" : "卸载", subtitle: removeError(t),
+               value: t.sizeBytes.map { "可释放 \(ByteCount.format($0))" }, destructive: true, style: .plain, hint: "卸载") {
             guard !removing, !launch.running, !library.verifying.contains(t.id), !downloading else { return }
             let again = t.source == .installed
-                ? "You can install it again from the Library."
-                : "To play it again, copy it into Playport again."
-            let frees = t.sizeBytes.map { "Frees \(ByteCount.format($0))" }
-            var note = "Saves the game keeps in its own folder are deleted with it; saves in Playport's Windows user folder stay. " + again
-            var options = [PadOption(id: "keep", label: "Keep it"), PadOption(id: "uninstall", label: "Uninstall", detail: frees)]
+                ? "你随时可从游戏库重新安装。"
+                : "若想再次游玩，需要将游戏重新拷入 Playport。"
+            let frees = t.sizeBytes.map { "释放 \(ByteCount.format($0))" }
+            var note = "游戏保存在自身安装目录内的存档会随之删除；保存在 Playport Windows 用户目录中的存档会保留。" + again
+            var options = [PadOption(id: "keep", label: "保留游戏"), PadOption(id: "uninstall", label: "卸载", detail: frees)]
             #if !PLAYPORT_RELEASE
             if t.store == .xbox {
                 // An Xbox copy's runtime keeps its saves per game in the prefix: the player chooses.
-                note = "Its saves on this phone can stay for when you install it again, or go with it. " + again
-                options = [PadOption(id: "keep", label: "Keep it"),
-                           PadOption(id: "uninstall", label: "Uninstall, keep saves", detail: frees),
-                           PadOption(id: "uninstall-saves", label: "Uninstall and delete saves", detail: frees)]
+                note = "此游戏在手机上的存档可以保留供日后重装使用，也可以一并删除。" + again
+                options = [PadOption(id: "keep", label: "保留游戏"),
+                           PadOption(id: "uninstall", label: "卸载并保留存档", detail: frees),
+                           PadOption(id: "uninstall-saves", label: "卸载并删除存档", detail: frees)]
             }
             #endif
-            PadModal.shared.picker(title: "Uninstall \(t.name)?", context: context, note: note, options: options, selected: nil) { choice in
+            PadModal.shared.picker(title: "卸载 \(t.name)？", context: context, note: note, options: options, selected: nil) { choice in
                 guard choice == "uninstall" || choice == "uninstall-saves" else { return }
                 navigation.gamePanels = []
                 library.uninstall(t.id, keepSaves: choice != "uninstall-saves")
@@ -1275,19 +1275,19 @@ private struct GameDetailPage: View {
         guard let e = library.removeErrors[t.id] else { return nil }
         #if PLAYPORT_RELEASE
         _ = e
-        return "The game could not be removed. Try again."
+        return "无法移除此游戏，请重试。"
         #else
         return e
         #endif
     }
 
     private func cloudDetail(_ app: UInt32) -> String? {
-        if model.cloudSyncing.contains(app) { return "Syncing saves…" }
-        if let e = model.cloudErrors[app] { return "Not synced: " + e }
+        if model.cloudSyncing.contains(app) { return "正在同步存档…" }
+        if let e = model.cloudErrors[app] { return "未同步：" + e }
         guard let c = model.cloud[app] else { return nil }
-        var s = "Synced " + c.at.formatted(date: .omitted, time: .shortened)
-        if !c.downloaded.isEmpty || !c.uploaded.isEmpty { s += " · \(c.downloaded.count) from Steam, \(c.uploaded.count) to Steam" }
-        if !c.failed.isEmpty { s += " · \(c.failed.count) failed" }
+        var s = "已于 " + c.at.formatted(date: .omitted, time: .shortened) + " 同步"
+        if !c.downloaded.isEmpty || !c.uploaded.isEmpty { s += " · 从 Steam 下载 \(c.downloaded.count) 个，上传至 Steam \(c.uploaded.count) 个" }
+        if !c.failed.isEmpty { s += " · \(c.failed.count) 个失败" }
         return s
     }
 
@@ -1301,54 +1301,54 @@ private struct GameDetailPage: View {
         let settings = launchSettings.binding(for: t.id)
         let exe = (try? t.launchPlan(cohort: LibraryModel.cohort))?.exe ?? ""
         let profile = FEXProfile.defaults(appID: t.appID, exe: exe)
-        let onOff: (Bool) -> String = { $0 ? "On" : "Off" }
-        PadSectionHeader(text: "Developer").id("developer")
+        let onOff: (Bool) -> String = { $0 ? "开启" : "关闭" }
+        PadSectionHeader(text: "开发者").id("developer")
         ForEach(MemoryOrdering.Setting.allCases, id: \.self) { s in
             let v = OptionValue.of(own: settings.wrappedValue.ordering[s], inherited: profile[s] == true, name: onOff)
             PadRow(id: "opt:ordering-\(s.rawValue)", title: LaunchSettingsText.ordering(s), value: v.text, accessory: .chevron,
                    changed: v.changed, style: .plain, reset: v.changed ? { settings.wrappedValue.ordering[s] = nil } : nil) {
                 PadModal.shared.picker(
-                    title: LaunchSettingsText.ordering(s), context: "\(context) · x86 memory ordering", note: LaunchSettingsText.orderingFooter,
-                    options: [PadOption(id: "", label: "Default", detail: "\(onOff(profile[s] == true)), the game's profile"),
-                              PadOption(id: "on", label: "On"), PadOption(id: "off", label: "Off")],
+                    title: LaunchSettingsText.ordering(s), context: "\(context) · x86 内存序", note: LaunchSettingsText.orderingFooter,
+                    options: [PadOption(id: "", label: "默认", detail: "\(onOff(profile[s] == true))，游戏预设配置"),
+                              PadOption(id: "on", label: "开启"), PadOption(id: "off", label: "关闭")],
                     selected: settings.wrappedValue.ordering[s].map { $0 ? "on" : "off" } ?? "") {
                     settings.wrappedValue.ordering[s] = $0.isEmpty ? nil : $0 == "on"
                 }
             }
         }
         let block = OptionValue.of(own: settings.wrappedValue.maxInst, inherited: FEXProfile.defaultBlockSize(appID: t.appID, exe: exe)) {
-            "\($0) instructions"
+            "\($0) 条指令"
         }
-        PadRow(id: "opt:maxInst", title: "Block size", value: block.text, accessory: .chevron, changed: block.changed, style: .plain,
+        PadRow(id: "opt:maxInst", title: "基本块大小", value: block.text, accessory: .chevron, changed: block.changed, style: .plain,
                reset: block.changed ? { settings.wrappedValue.maxInst = nil } : nil) {
             PadModal.shared.picker(
-                title: "Block size", context: "\(context) · x86 emulator", note: LaunchSettingsText.orderingFooter,
-                options: [PadOption(id: "", label: "Default",
-                                    detail: "\(FEXProfile.defaultBlockSize(appID: t.appID, exe: exe)), the game's profile")]
-                    + FEXProfile.blockSizes.map { PadOption(id: String($0), label: "\($0) instructions") },
+                title: "基本块大小", context: "\(context) · x86 模拟器", note: LaunchSettingsText.orderingFooter,
+                options: [PadOption(id: "", label: "默认",
+                                    detail: "\(FEXProfile.defaultBlockSize(appID: t.appID, exe: exe))，游戏预设配置")]
+                    + FEXProfile.blockSizes.map { PadOption(id: String($0), label: "\($0) 条指令") },
                 selected: settings.wrappedValue.maxInst.map(String.init) ?? "") { settings.wrappedValue.maxInst = Int($0) }
         }
         let x87Profile = FEXProfile.defaultX87Reduced(appID: t.appID, exe: exe)
-        let x87Name: (Bool) -> String = { $0 ? "64-bit" : "80-bit" }
+        let x87Name: (Bool) -> String = { $0 ? "64 位" : "80 位" }
         let x87 = OptionValue.of(own: settings.wrappedValue.x87Reduced, inherited: x87Profile, name: x87Name)
-        PadRow(id: "opt:x87Reduced", title: "x87 precision", value: x87.text, accessory: .chevron, changed: x87.changed,
+        PadRow(id: "opt:x87Reduced", title: "x87 浮点精度", value: x87.text, accessory: .chevron, changed: x87.changed,
                style: .plain, reset: x87.changed ? { settings.wrappedValue.x87Reduced = nil } : nil) {
             PadModal.shared.picker(
-                title: "x87 precision", context: "\(context) · x86 emulator", note: LaunchSettingsText.x87Footer,
-                options: [PadOption(id: "", label: "Default", detail: "\(x87Name(x87Profile)), the game's profile"),
-                          PadOption(id: "reduced", label: "64-bit"), PadOption(id: "full", label: "80-bit")],
+                title: "x87 浮点精度", context: "\(context) · x86 模拟器", note: LaunchSettingsText.x87Footer,
+                options: [PadOption(id: "", label: "默认", detail: "\(x87Name(x87Profile))，游戏预设配置"),
+                          PadOption(id: "reduced", label: "64 位"), PadOption(id: "full", label: "80 位")],
                 selected: settings.wrappedValue.x87Reduced.map { $0 ? "reduced" : "full" } ?? "") {
                 settings.wrappedValue.x87Reduced = $0.isEmpty ? nil : $0 == "reduced"
             }
         }
-        let cacheName: (Bool) -> String = { $0 ? "On" : "Off" }
+        let cacheName: (Bool) -> String = { $0 ? "开启" : "关闭" }
         let cache = OptionValue.of(own: settings.wrappedValue.diskCache, inherited: FEXProfile.defaultDiskCache, name: cacheName)
-        PadRow(id: "opt:diskCache", title: "Disk cache", value: cache.text, accessory: .chevron, changed: cache.changed,
+        PadRow(id: "opt:diskCache", title: "磁盘缓存", value: cache.text, accessory: .chevron, changed: cache.changed,
                style: .plain, reset: cache.changed ? { settings.wrappedValue.diskCache = nil } : nil) {
             PadModal.shared.picker(
-                title: "Disk cache", context: "\(context) · x86 emulator", note: LaunchSettingsText.diskCacheFooter,
-                options: [PadOption(id: "", label: "Default", detail: cacheName(FEXProfile.defaultDiskCache)),
-                          PadOption(id: "on", label: "On"), PadOption(id: "off", label: "Off")],
+                title: "磁盘缓存", context: "\(context) · x86 模拟器", note: LaunchSettingsText.diskCacheFooter,
+                options: [PadOption(id: "", label: "默认", detail: cacheName(FEXProfile.defaultDiskCache)),
+                          PadOption(id: "on", label: "开启"), PadOption(id: "off", label: "关闭")],
                 selected: settings.wrappedValue.diskCache.map { $0 ? "on" : "off" } ?? "") {
                 settings.wrappedValue.diskCache = $0.isEmpty ? nil : $0 == "on"
             }
@@ -1360,35 +1360,33 @@ private struct GameDetailPage: View {
         let every = LaunchSettings.everyGame
         let services = OptionValue.of(own: settings.wrappedValue.windowsServices, compat: compat?.windowsServices,
                                       inherited: every.windowsServices ?? false, name: onOff)
-        PadRow(id: "opt:windowsServices", title: "Windows services", value: services.text, accessory: .chevron,
+        PadRow(id: "opt:windowsServices", title: "Windows 服务", value: services.text, accessory: .chevron,
                changed: services.changed, style: .plain,
                reset: services.changed ? { settings.wrappedValue.windowsServices = nil } : nil) {
             PadModal.shared.picker(
-                title: "Windows services", context: "\(context) · Windows",
-                note: "Starts Wine's service manager (services.exe) before the game, for a launcher that installs "
-                    + "and uses a Windows service; its services stop when the game ends.",
-                options: [PadOption(id: "", label: "Default",
-                                    detail: compat?.windowsServices.map { "\(onOff($0)), for this game" } ?? onOff(every.windowsServices ?? false)),
-                          PadOption(id: "on", label: "On"), PadOption(id: "off", label: "Off")],
+                title: "Windows 服务", context: "\(context) · Windows",
+                note: "在启动游戏前运行 Wine 服务管理器（services.exe），供安装并依赖 Windows 服务的启动器使用；游戏结束时相关服务将自动停止。",
+                options: [PadOption(id: "", label: "默认",
+                                    detail: compat?.windowsServices.map { "\(onOff($0))，针对此游戏" } ?? onOff(every.windowsServices ?? false)),
+                          PadOption(id: "on", label: "开启"), PadOption(id: "off", label: "关闭")],
                 selected: settings.wrappedValue.windowsServices.map { $0 ? "on" : "off" } ?? "") {
                 settings.wrappedValue.windowsServices = $0.isEmpty ? nil : $0 == "on"
             }
         }
         // The Khronos Vulkan loader (decision 0131): its vulkan-1.dll in place of Wine's, for this play.
-        let khronosName: (Bool) -> String = { $0 ? "Khronos" : "Wine's" }
+        let khronosName: (Bool) -> String = { $0 ? "Khronos" : "Wine 自带" }
         let loader = OptionValue.of(own: settings.wrappedValue.khronosVulkanLoader, compat: compat?.khronosVulkanLoader,
                                     inherited: every.khronosVulkanLoader ?? false, name: khronosName)
-        PadRow(id: "opt:khronosVulkanLoader", title: "Vulkan loader", value: loader.text, accessory: .chevron,
+        PadRow(id: "opt:khronosVulkanLoader", title: "Vulkan 加载器", value: loader.text, accessory: .chevron,
                changed: loader.changed, style: .plain,
                reset: loader.changed ? { settings.wrappedValue.khronosVulkanLoader = nil } : nil) {
             PadModal.shared.picker(
-                title: "Vulkan loader", context: "\(context) · Windows",
-                note: "The Khronos Vulkan loader loads the Vulkan layers a game asks for, such as its overlay's; "
-                    + "Wine's own loads none.",
-                options: [PadOption(id: "", label: "Default",
-                                    detail: compat?.khronosVulkanLoader.map { "\(khronosName($0)), for this game" }
+                title: "Vulkan 加载器", context: "\(context) · Windows",
+                note: "Khronos Vulkan 加载器会加载游戏请求的 Vulkan 层（例如游戏内覆盖层）；Wine 自带的加载器不会加载它们。",
+                options: [PadOption(id: "", label: "默认",
+                                    detail: compat?.khronosVulkanLoader.map { "\(khronosName($0))，针对此游戏" }
                                         ?? khronosName(every.khronosVulkanLoader ?? false)),
-                          PadOption(id: "khronos", label: "Khronos"), PadOption(id: "wine", label: "Wine's")],
+                          PadOption(id: "khronos", label: "Khronos"), PadOption(id: "wine", label: "Wine 自带")],
                 selected: settings.wrappedValue.khronosVulkanLoader.map { $0 ? "khronos" : "wine" } ?? "") {
                 settings.wrappedValue.khronosVulkanLoader = $0.isEmpty ? nil : $0 == "khronos"
             }
@@ -1396,27 +1394,27 @@ private struct GameDetailPage: View {
         let compatKeys = LaunchSettings.keyItems(compat?.runtime ?? "", over: LaunchSettings.everyGame.runtime)
             .trimmingCharacters(in: .whitespaces)
         let compatOptions = compat?.graphicsOptions.trimmingCharacters(in: .whitespaces) ?? ""
-        let forThisGame: (String) -> String? = { $0.isEmpty ? nil : "\(OptionValue.compatMarker) For this game: \($0); your own key of the same name wins" }
+        let forThisGame: (String) -> String? = { $0.isEmpty ? nil : "\(OptionValue.compatMarker) 针对此游戏：\($0)；你设置的同名参数将优先覆盖" }
         let keys = settings.wrappedValue.runtime.trimmingCharacters(in: .whitespaces)
-        PadRow(id: "opt:runtime", title: "Runtime keys",
+        PadRow(id: "opt:runtime", title: "运行时参数",
                subtitle: LaunchSettings.unusedRuntimeKeysNote(keys) ?? forThisGame(compatKeys),
                subtitleLines: 2,
-               value: keys.isEmpty ? "None" : keys, accessory: .chevron, changed: !keys.isEmpty, style: .plain,
+               value: keys.isEmpty ? "无" : keys, accessory: .chevron, changed: !keys.isEmpty, style: .plain,
                reset: keys.isEmpty ? nil : { settings.wrappedValue.runtime = "" }) {
-            PadModal.shared.keyboard(title: "Runtime keys", text: settings.wrappedValue.runtime,
-                                     placeholder: "For example inproc-sync=1 env.FEX_SMCCHECKS=mtrack",
+            PadModal.shared.keyboard(title: "运行时参数", text: settings.wrappedValue.runtime,
+                                     placeholder: "例如 inproc-sync=1 env.FEX_SMCCHECKS=mtrack",
                                      maxLength: 200) { settings.wrappedValue.runtime = $0 }
         }
         // The game's environment variables and Vulkan layers' options (decisions 0060, 0137).
         let options = settings.wrappedValue.graphicsOptions.trimmingCharacters(in: .whitespaces)
-        PadRow(id: "opt:graphicsOptions", title: "Graphics options",
+        PadRow(id: "opt:graphicsOptions", title: "图形环境变量",
                subtitle: options.isEmpty || LaunchSettings.graphicsEnvironment(options) != nil ? forThisGame(compatOptions)
-                   : "Not NAME=value or DXVK option items: not used",
+                   : "非 NAME=value 或 DXVK 选项格式：未生效",
                subtitleLines: 2,
-               value: options.isEmpty ? "None" : options, accessory: .chevron, changed: !options.isEmpty, style: .plain,
+               value: options.isEmpty ? "无" : options, accessory: .chevron, changed: !options.isEmpty, style: .plain,
                reset: options.isEmpty ? nil : { settings.wrappedValue.graphicsOptions = "" }) {
-            PadModal.shared.keyboard(title: "Graphics options", text: settings.wrappedValue.graphicsOptions,
-                                     placeholder: "For example dxvk.tilerMode=False VKD3D_CONFIG=one_time_submit",
+            PadModal.shared.keyboard(title: "图形环境变量", text: settings.wrappedValue.graphicsOptions,
+                                     placeholder: "例如 dxvk.tilerMode=False VKD3D_CONFIG=one_time_submit",
                                      maxLength: 300) { settings.wrappedValue.graphicsOptions = $0 }
         }
         if let app = t.appID {
@@ -1428,11 +1426,11 @@ private struct GameDetailPage: View {
                    reset: steamAPI.changed ? { settings.wrappedValue.steamAPI = nil } : nil) {
                 PadModal.shared.picker(
                     title: "Steam API", context: "\(context) · Steam",
-                    note: "The game's own Steam API needs Steam running: with Playport's Steam client it finds one that "
-                        + "answers for this game only; alone, games that check for Steam will not start. "
-                        + "Changes apply from the game's next launch.",
-                    options: [PadOption(id: "", label: "Default",
-                                        detail: compat?.steamAPI.map { "\(Self.steamAPIModeText($0)), for this game" }
+                    note: "游戏自带的 Steam API 需要 Steam 客户端处于运行状态：选择「Playport Steam 客户端」会为其提供仅响应当前游戏的内置客户端；"
+                        + "若单独使用「游戏自带」，检测 Steam 运行状态的游戏将无法启动。"
+                        + "更改将在下次启动游戏时生效。",
+                    options: [PadOption(id: "", label: "默认",
+                                        detail: compat?.steamAPI.map { "\(Self.steamAPIModeText($0))，针对此游戏" }
                                             ?? Self.steamAPIModeText(every.steamAPI ?? .emulated)),
                               PadOption(id: SteamAPISwap.Mode.emulated.rawValue, label: Self.steamAPIModeText(.emulated)),
                               PadOption(id: SteamAPISwap.Mode.client.rawValue, label: Self.steamAPIModeText(.client)),
@@ -1442,15 +1440,15 @@ private struct GameDetailPage: View {
                 }
             }
             developerFacts(t, app)
-            PadRow(id: "opt:cloud-forget", title: "Forget the cloud sync",
-                   subtitle: "The next sync is a first one: a save that differs from Steam's is a conflict",
-                   style: .plain, hint: "Forget") {
+            PadRow(id: "opt:cloud-forget", title: "重置云同步记录",
+                   subtitle: "下次同步将视为首次同步：与 Steam 云端不一致的存档将提示冲突",
+                   style: .plain, hint: "重置") {
                 guard !model.cloudSyncing.contains(app), !launch.running else { return }
                 Task { await model.forgetCloud(app) }
             }
             let busy = model.gameProfileLoading.contains(app) || model.statsSyncing.contains(app)
-            PadRow(id: "opt:steam-refresh", title: "Update from Steam", subtitle: model.gameProfileErrors[app] ?? model.statsErrors[app],
-                   value: busy ? "Asking Steam…" : nil, style: .plain, hint: "Update") {
+            PadRow(id: "opt:steam-refresh", title: "从 Steam 刷新信息", subtitle: model.gameProfileErrors[app] ?? model.statsErrors[app],
+                   value: busy ? "正在请求 Steam…" : nil, style: .plain, hint: "刷新") {
                 guard !busy, signedIn, !launch.running else { return }
                 Task {
                     await model.loadGameProfile(app, refresh: true)
@@ -1467,20 +1465,20 @@ private struct GameDetailPage: View {
     private func developerFacts(_ t: InstalledTitle, _ app: UInt32?) -> some View {
         let g = game
         var lines: [(String, String)] = []
-        if let b = t.buildID { lines.append(("Build", String(b))) }
-        if let b = g?.info.depots.buildID(branch: selectedBranch), b != t.buildID { lines.append(("Steam build", String(b))) }
-        if let app { lines.append(("Steam app", String(app))) }
-        lines.append(("Folder", "C:\\Games\\\(t.installDir)"))
-        lines.append(("Executable", t.executable ?? "none found"))
-        if let state = steamAPIState { lines.append(("In the game's folder", Self.steamAPIText(state))) }
+        if let b = t.buildID { lines.append(("构建号", String(b))) }
+        if let b = g?.info.depots.buildID(branch: selectedBranch), b != t.buildID { lines.append(("Steam 构建号", String(b))) }
+        if let app { lines.append(("Steam App ID", String(app))) }
+        lines.append(("目录", "C:\\Games\\\(t.installDir)"))
+        lines.append(("可执行文件", t.executable ?? "未找到"))
+        if let state = steamAPIState { lines.append(("游戏目录内", Self.steamAPIText(state))) }
         for site in steamStubs {
             lines.append(("Steam DRM", Self.steamStubText(site, mode: launchSettings.settings(for: t.id).steamAPI ?? .emulated)))
         }
         if let app, let profile = model.gameProfiles[app] {
-            lines.append(("Player", profile.personaName ?? "Not known yet"))
-            lines.append(("DLC", profile.dlc.isEmpty ? "None owned" : "\(profile.dlc.count) owned"))
+            lines.append(("玩家昵称", profile.personaName ?? "未知"))
+            lines.append(("DLC", profile.dlc.isEmpty ? "未拥有" : "已拥有 \(profile.dlc.count) 项"))
         }
-        if let note = t.note { lines.append(("Note", note)) }
+        if let note = t.note { lines.append(("备注", note)) }
         return VStack(alignment: .leading, spacing: 4) {
             ForEach(lines.indices, id: \.self) { i in
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
@@ -1496,24 +1494,24 @@ private struct GameDetailPage: View {
 
     private static func steamAPIModeText(_ m: SteamAPISwap.Mode) -> String {
         switch m {
-        case .emulated: "Playport's emulator"
-        case .client: "Playport's Steam client"
-        case .original: "The game's own"
+        case .emulated: "Playport 模拟器"
+        case .client: "Playport Steam 客户端"
+        case .original: "游戏自带"
         }
     }
 
     private static func steamStubText(_ site: SteamStub.Site, mode: SteamAPISwap.Mode) -> String {
-        if site.info.unsupported != nil { return "\(site.info.label), can't be removed yet" }
-        if site.removed { return mode.removesSteamStub ? "Removed (\(site.info.label))" : "Removed; back at next launch" }
-        return mode.removesSteamStub ? "\(site.info.label), removed at next launch" : site.info.label
+        if site.info.unsupported != nil { return "\(site.info.label)，暂不支持移除" }
+        if site.removed { return mode.removesSteamStub ? "已移除（\(site.info.label)）" : "已移除；下次启动时恢复" }
+        return mode.removesSteamStub ? "\(site.info.label)，下次启动时移除" : site.info.label
     }
 
     private static func steamAPIText(_ s: SteamAPISwap.State) -> String {
         switch s {
-        case .none: "No steam_api"
-        case .original: "The game's own"
-        case .emulated: "Playport's emulator"
-        case .mixed: "Partly swapped"
+        case .none: "无 steam_api"
+        case .original: "游戏自带"
+        case .emulated: "Playport 模拟器"
+        case .mixed: "部分替换"
         }
     }
     #endif
@@ -1532,9 +1530,9 @@ private struct GameDetailPage: View {
             return l.offset < r.offset
         }.map(\.element)
         return VStack(alignment: .leading, spacing: 3) {
-            Text("\(context) · \(s?.unlockedCount ?? 0) of \(all.count)").font(.system(size: 12)).foregroundStyle(PP.muted)
+            Text("\(context) · 已解锁 \(s?.unlockedCount ?? 0) / \(all.count)").font(.system(size: 12)).foregroundStyle(PP.muted)
                 .padding(.horizontal, 14)
-            Text("Achievements").font(PP.display(22)).foregroundStyle(PP.text)
+            Text("成就").font(PP.display(22)).foregroundStyle(PP.text)
                 .padding(.horizontal, 14).padding(.bottom, 6)
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
@@ -1543,7 +1541,7 @@ private struct GameDetailPage: View {
                             achievementRow(sorted[i], s, id: "ach:\(i)")
                         }
                         if !(s?.schema.achievements.isEmpty ?? true) {
-                            Text("From Steam. What a play unlocks goes to Steam when Playport next opens.")
+                            Text("数据来自 Steam。游玩期间解锁的成就将在下次打开 Playport 时同步至 Steam。")
                                 .font(.system(size: 12)).foregroundStyle(PP.muted)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 14).padding(.top, 8)
@@ -1571,9 +1569,9 @@ private struct GameDetailPage: View {
                 .foregroundStyle(unlocked ? PP.accent : selected ? Color(hex: 0x3A4452) : PP.muted)
                 .frame(width: 18)
             VStack(alignment: .leading, spacing: 1) {
-                Text(hidden ? "Hidden achievement" : a.text(a.displayName)).font(.system(size: 15, weight: .medium))
+                Text(hidden ? "隐藏成就" : a.text(a.displayName)).font(.system(size: 15, weight: .medium))
                     .foregroundStyle(selected ? PP.background : unlocked ? PP.text : PP.soft)
-                let desc = hidden ? "Unlock it to see what it is." : a.text(a.description)
+                let desc = hidden ? "解锁后即可查看详情。" : a.text(a.description)
                 if !desc.isEmpty, desc != a.name {
                     Text(desc).font(.system(size: 12)).foregroundStyle(selected ? Color(hex: 0x3A4452) : PP.muted)
                 }
@@ -1798,29 +1796,29 @@ enum ProblemReport {
 
 /// What the player is told about JIT before and during a launch (JitProvider).
 enum JitNote {
-    static let beforePlay = "JIT comes from Playport's own helper over LocalDevVPN, which Play turns on when it is off."
-    static let waiting = "Playport's JIT helper is attaching. Keep Playport open."
-    static let waitingForStikDebug = "Waiting for StikDebug to enable JIT. It comes back to Playport when it is done."
-    static let waitingForAnotherApp = "Waiting for JIT from another app. Enable JIT for Playport there now, with the universal.js script."
+    static let beforePlay = "JIT 由 Playport 内置助手通过 LocalDevVPN 提供；若未开启，点击「开始游戏」时会自动开启。"
+    static let waiting = "Playport 的 JIT 助手正在附加，请保持 Playport 开启。"
+    static let waitingForStikDebug = "正在等待 StikDebug 启用 JIT，完成后会自动返回 Playport。"
+    static let waitingForAnotherApp = "正在等待其他应用提供 JIT。请现在前往该应用配合 universal.js 脚本为 Playport 启用 JIT。"
 
     /// Why a game ended on running out of its JIT pool (LaunchMessage). Every Play
     /// gets the same pool (JitPool.sizeMB, decision 0184); only a dev build's simulated
     /// one is smaller. One that went on running was ended by the restart (decision 0030).
     static func outOfMemory(_ part: JitPool.Exhaustion, poolMB: Int) -> String {
         let what = switch part {
-        case .head: "the game's program files"
-        case .tail: "the code Playport translated for it"
-        case .alias: "the code the game compiled as it ran"
+        case .head: "游戏的程序文件"
+        case .tail: "Playport 为游戏转译的代码"
+        case .alias: "游戏运行期间动态编译的代码"
         }
-        let size = poolMB > 0 ? "\(ByteCount.format(mb: poolMB)) of " : ""
+        let size = poolMB > 0 ? "\(ByteCount.format(mb: poolMB)) 的 " : ""
         let more = poolMB > 0 && poolMB < JitPool.sizeMB
-            ? "Less than usual was set aside: Settings › Developer's Simulated JIT memory makes it smaller."
-            : "This game needs more than Playport sets aside."
-        return "Playport set aside \(size)JIT memory for the game, and \(what) filled it. \(more)"
+            ? "当前预留空间低于正常值：「设置 › 开发者」中的「模拟 JIT 内存大小」缩小了上限。"
+            : "此游戏所需的 JIT 内存超出了 Playport 的预留上限。"
+        return "Playport 为游戏预留了 \(size)JIT 内存，已被\(what)占满。\(more)"
     }
 
     /// Why a game ended on FEX's host band filling (LaunchMessage, decision 0120): its size is
     /// fixed, so there is nothing to set; what fills it is the game's threads, with its launcher's.
-    static let outOfEmulatorMemory = "The x86 emulator keeps a fixed amount of memory for every thread "
-        + "the game and its launcher run, and their threads filled it. This game runs more threads than Playport can hold."
+    static let outOfEmulatorMemory = "x86 模拟器会为游戏及其启动器运行的每个线程保留固定大小的内存，"
+        + "当前已被这些线程占满。此游戏创建的线程数超出了 Playport 的承载上限。"
 }

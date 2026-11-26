@@ -45,7 +45,7 @@ struct DownloadsPage: View {
                             nothing
                         }
                         if order.count > 1 {
-                            Text("Up next").font(.system(size: 11, weight: .semibold)).tracking(1.1).textCase(.uppercase)
+                            Text("接下来").font(.system(size: 11, weight: .semibold)).tracking(1.1).textCase(.uppercase)
                                 .foregroundStyle(PP.muted).padding(.top, 4)
                             ForEach(order.dropFirst()) { job in
                                 JobRow(job: job, installs: installs)
@@ -73,8 +73,8 @@ struct DownloadsPage: View {
 
     private var nothing: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Nothing downloading").font(PP.display(22)).foregroundStyle(PP.text)
-            Text("Games you install from the Library download here, one at a time. Updates queue by themselves.")
+            Text("暂无下载任务").font(PP.display(22)).foregroundStyle(PP.text)
+            Text("你在游戏库中安装的游戏会在这里逐个下载，游戏更新也会自动加入队列。")
                 .font(.system(size: 13)).foregroundStyle(PP.muted)
         }
         .padding(.horizontal, 16).padding(.vertical, 14)
@@ -84,19 +84,19 @@ struct DownloadsPage: View {
 
     private var whileYouWait: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SmallCaps("While you wait")
-            Text("Downloads need Playport open. After a minute the screen dims to save power; plug in for big games.")
+            SmallCaps("等待期间")
+            Text("下载期间需保持 Playport 在前台开启。无操作一分钟后屏幕会自动调暗以省电；下载大型游戏时建议连接电源。")
                 .font(.system(size: 13)).foregroundStyle(PP.soft).lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
                 Image(systemName: "moon.fill").font(.system(size: 11))
-                Text("Dim now").font(.system(size: 13, weight: .semibold))
+                Text("立即调暗").font(.system(size: 13, weight: .semibold))
             }
             .foregroundStyle(PP.text)
             .padding(.horizontal, 10).padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(PP.line, in: RoundedRectangle(cornerRadius: 8))
-            .padItem(Self.dimItem, hint: "Dim now", cornerRadius: 8) { DownloadDimmer.shared.dimNow() }
+            .padItem(Self.dimItem, hint: "立即调暗", cornerRadius: 8) { DownloadDimmer.shared.dimNow() }
         }
         .padding(.horizontal, 16).padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -105,9 +105,9 @@ struct DownloadsPage: View {
 
     private var doneToday: some View {
         VStack(alignment: .leading, spacing: 4) {
-            SmallCaps("Done today")
+            SmallCaps("今日已完成")
             if installs.doneToday.isEmpty {
-                Text("Nothing yet").font(.system(size: 13)).foregroundStyle(PP.muted)
+                Text("暂无记录").font(.system(size: 13)).foregroundStyle(PP.muted)
             } else {
                 ForEach(Array(installs.doneToday.prefix(4).enumerated()), id: \.offset) { _, d in
                     Text(d.line).font(.system(size: 13)).foregroundStyle(PP.soft).lineLimit(1)
@@ -127,9 +127,9 @@ struct DownloadsPage: View {
         guard let id = focused, let app = key(item: id), let job = installs.jobs[app] else { return [] }
         var h: [PadHint] = []
         if app != installs.order.first?.key, !installs.suspended {
-            h.append(PadHint(button: .y, label: "Download next") { installs.downloadNext(app) })
+            h.append(PadHint(button: .y, label: "优先下载") { installs.downloadNext(app) })
         }
-        h.append(PadHint(button: .x, label: "Cancel") { confirmCancel(job, installs) })
+        h.append(PadHint(button: .x, label: "取消") { confirmCancel(job, installs) })
         return h
     }
 
@@ -144,18 +144,18 @@ struct DownloadsPage: View {
     }
 
     static func toggleHint(_ job: Downloads.Job) -> String {
-        job.isRunning || job.phase == .queued ? "Pause" : "Resume"
+        job.isRunning || job.phase == .queued ? "暂停" : "继续下载"
     }
 
     /// X: cancel, confirmed in a picker whose default keeps the download.
     @MainActor
     static func confirmCancel(_ job: Downloads.Job, _ installs: Downloads) {
-        let what = job.kind == .repair ? "repair" : job.kind == .update ? "update" : job.kind == .import ? "import" : "download"
-        let got = job.progress.map { " · deletes \(ByteCount.format($0.bytesDone))" } ?? ""
+        let what = job.kind == .repair ? "修复" : job.kind == .update ? "更新" : job.kind == .import ? "导入" : "下载"
+        let got = job.progress.map { " · 删除 \(ByteCount.format($0.bytesDone))" } ?? ""
         PadModal.shared.picker(
-            title: "Cancel the \(what)?", context: job.name,
-            note: job.record.automatic ? "It is not queued again until Steam has a newer version." : "What was downloaded is deleted.",
-            options: [PadOption(id: "keep", label: "Keep it"), PadOption(id: "cancel", label: "Cancel the \(what)" + got)],
+            title: "要取消\(what)吗？", context: job.name,
+            note: job.record.automatic ? "在 Steam 发布更新版本前不会再次自动排队。" : "已下载的内容将被删除。",
+            options: [PadOption(id: "keep", label: "保留任务"), PadOption(id: "cancel", label: "取消\(what)" + got)],
             selected: "keep") { picked in
             if picked == "cancel" { installs.discard(job.key) }
         }
@@ -209,10 +209,10 @@ private struct FirstJobCard: View {
 
     /// `Downloading · 3.4 of 5.4 GB`, `Paused · Steam can't be reached.`
     private var line: String {
-        if case let .paused(reason) = job.phase { return ["Paused", reason].compactMap { $0 }.joined(separator: " · ") }
+        if case let .paused(reason) = job.phase { return ["已暂停", reason].compactMap { $0 }.joined(separator: " · ") }
         let what = job.phase == .downloading ? job.verb : job.status
         if let p = job.progress, job.phase == .downloading {
-            return "\(what) · \(ByteCount.format(p.bytesDone)) of \(ByteCount.format(p.bytesTotal))"
+            return "\(what) · \(ByteCount.format(p.bytesDone)) / \(ByteCount.format(p.bytesTotal))"
         }
         return [what, job.record.bytes.map(ByteCount.format)].compactMap { $0 }.joined(separator: " · ")
     }
@@ -248,13 +248,13 @@ private struct JobRow: View {
     private var subtitle: String {
         var parts = [job.kind.label]
         if let p = job.progress, p.bytesTotal > p.bytesDone {
-            parts.append("\(ByteCount.format(p.bytesTotal - p.bytesDone)) left")
+            parts.append("剩余 \(ByteCount.format(p.bytesTotal - p.bytesDone))")
         } else if let b = job.record.bytes {
             parts.append(ByteCount.format(b))
         }
-        if job.record.automatic { parts.append("queued by itself") }
+        if job.record.automatic { parts.append("自动排队") }
         switch job.phase {
-        case let .paused(reason): parts.append(reason ?? "Paused")
+        case let .paused(reason): parts.append(reason ?? "已暂停")
         case .queued: if let w = job.waitingFor { parts.append(w) }
         default: break
         }
@@ -274,9 +274,9 @@ struct StorageBar: View {
         let other = used > games ? used - games : 0
         VStack(spacing: 3) {
             HStack {
-                Text("Storage")
+                Text("存储空间")
                 Spacer()
-                Text(total > 0 ? "\(ByteCount.format(free)) free of \(ByteCount.format(total))" : "Unknown")
+                Text(total > 0 ? "可用 \(ByteCount.format(free)) / 共 \(ByteCount.format(total))" : "未知")
             }
             .font(.system(size: 11)).foregroundStyle(PP.muted)
             GeometryReader { geo in
@@ -412,14 +412,14 @@ struct DownloadModeView: View {
                             .opacity(0.75)
                         Text(queueLine).font(.system(size: 13)).foregroundStyle(Color(hex: 0x6F7885))
                     } else {
-                        Text(installs.doneToday.isEmpty ? "Nothing downloading" : "Downloads finished")
+                        Text(installs.doneToday.isEmpty ? "暂无下载任务" : "下载已完成")
                             .font(PP.display(24, .semibold)).foregroundStyle(Color(hex: 0x8A94A3))
                     }
                 }
                 .frame(width: 300)
                 VStack {
                     Spacer()
-                    Text("Press any button or tap to wake").font(.system(size: 13)).foregroundStyle(PP.accent.opacity(0.8))
+                    Text("按任意键或轻点屏幕以唤醒").font(.system(size: 13)).foregroundStyle(PP.accent.opacity(0.8))
                         .padding(.bottom, 24)
                 }
             }
@@ -438,8 +438,8 @@ struct DownloadModeView: View {
         let rate = order.first?.rate
         let remaining = order.compactMap(\.remaining).reduce(0, +)
         let time = DownloadRate.seconds(remaining: remaining, rate: rate).map(DownloadRate.duration)
-        let head = more == 0 ? "Last in the queue" : more == 1 ? "1 more in the queue" : "\(more) more in the queue"
+        let head = more == 0 ? "队列中的最后一项" : "队列中还有 \(more) 项"
         guard let time else { return head }
-        return head + " · " + time + (more == 0 ? " left" : " for all")
+        return head + " · " + (more == 0 ? "剩余 " + time : "全部完成还需 " + time)
     }
 }

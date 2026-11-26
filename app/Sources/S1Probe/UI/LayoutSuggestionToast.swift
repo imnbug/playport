@@ -155,12 +155,12 @@ final class LayoutSuggestionToast: UIView {
         card.layer.borderColor = UIColor(red: 42 / 255, green: 51 / 255, blue: 64 / 255, alpha: 1).cgColor
         card.alpha = 0
         card.isHidden = true
-        label.text = "This game doesn't seem to read a controller."
+        label.text = "此游戏似乎不支持手柄输入。"
         label.font = .systemFont(ofSize: 13)
         label.textColor = UIColor(red: 201 / 255, green: 209 / 255, blue: 220 / 255, alpha: 1)
-        style(use, "Use Keyboard & mouse", fill: UIColor(red: 245 / 255, green: 181 / 255, blue: 68 / 255, alpha: 0.95),
+        style(use, "使用键盘与鼠标", fill: UIColor(red: 245 / 255, green: 181 / 255, blue: 68 / 255, alpha: 0.95),
               text: UIColor(red: 26 / 255, green: 18 / 255, blue: 4 / 255, alpha: 1))
-        style(notNow, "Not now", fill: UIColor(white: 1, alpha: 0.10), text: UIColor(red: 238 / 255, green: 241 / 255, blue: 245 / 255, alpha: 0.94))
+        style(notNow, "暂不", fill: UIColor(white: 1, alpha: 0.10), text: UIColor(red: 238 / 255, green: 241 / 255, blue: 245 / 255, alpha: 0.94))
         use.addAction(UIAction { _ in MainActor.assumeIsolated { SuggestedLayout.shared.answer(accept: true, by: "tap") } }, for: .touchUpInside)
         notNow.addAction(UIAction { _ in MainActor.assumeIsolated { SuggestedLayout.shared.answer(accept: false, by: "tap") } }, for: .touchUpInside)
         card.addSubview(label)

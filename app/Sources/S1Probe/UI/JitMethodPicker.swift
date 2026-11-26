@@ -12,14 +12,14 @@ enum JitMethodPicker {
     static func show() {
         let inLC = JitProvider.inLiveContainer
         let current = JitProvider.method
-        var note = "Every method needs Developer Mode. StikDebug and another app need the universal.js script for Playport."
+        var note = "所有方式均需开启「开发者模式」。使用 StikDebug 或其他应用时，需为 Playport 指定 universal.js 脚本。"
         if inLC {
-            note = "Playport runs inside LiveContainer, which cannot start Playport's own JIT helper. "
-                + "Launch Playport with JIT from LiveContainer (its JIT enabler set to StikDebug, with universal.js), "
-                + "or choose StikDebug and turn on LiveContainer's Use LiveContainer's Bundle ID."
+            note = "Playport 当前运行在 LiveContainer 内，无法启动自带的 JIT 助手。"
+                + "请从 LiveContainer 使用 JIT 启动 Playport（将其 JIT 启用器设为 StikDebug 并搭配 universal.js），"
+                + "或在此选择 StikDebug 并在 LiveContainer 设置中开启「使用 LiveContainer 的 Bundle ID」。"
         }
         PadModal.shared.picker(
-            title: "JIT method", context: "Where a game's JIT comes from", note: note,
+            title: "JIT 方式", context: "选择游戏获取 JIT 的来源", note: note,
             options: JitMethod.choices(inLiveContainer: inLC).map { PadOption(id: $0.rawValue, label: $0.label, detail: $0.detail) },
             selected: current.rawValue) { id in
             guard let m = JitMethod(rawValue: id) else { return }

@@ -73,11 +73,11 @@ public enum ImportError: Error, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case .empty: "There is nothing to import there."
-        case let .notDownloaded(n): "\(n) of its files are still in iCloud. Download the folder in Files first."
-        case let .refused(why): "Playport can't import this: \(why)"
+        case .empty: "所选位置没有可导入的内容。"
+        case let .notDownloaded(n): "其中有 \(n) 个文件仍在 iCloud 云端，请先在「文件」中将其下载到本地。"
+        case let .refused(why): "Playport 无法导入此内容：\(why)"
         case let .insufficientSpace(needed, available):
-            "Not enough free space: \(ByteCount.format(needed)) needed, \(ByteCount.format(available)) free."
+            "可用空间不足：需要 \(ByteCount.format(needed))，当前可用 \(ByteCount.format(available))。"
         }
     }
 }
@@ -125,7 +125,7 @@ public struct GameImporter: Sendable {
                 if name.hasPrefix("."), name.hasSuffix(".icloud") { placeholders += 1; continue }
                 let url = dir.appendingPathComponent(name)
                 var st = stat()
-                guard lstat(url.path, &st) == 0 else { throw ImportError.refused("\(name) cannot be read") }
+                guard lstat(url.path, &st) == 0 else { throw ImportError.refused("无法读取 \(name)") }
                 let kind = st.st_mode & S_IFMT
                 if kind == S_IFLNK { symlinks += 1; continue }
                 let path = rel + [name]
@@ -148,17 +148,17 @@ public struct GameImporter: Sendable {
 
     static func planZip(_ url: URL) throws -> ImportPlan {
         let zip: ZipArchive
-        do { zip = try ZipArchive(url: url) } catch { throw ImportError.refused("it is not a zip Playport can read (\(error))") }
+        do { zip = try ZipArchive(url: url) } catch { throw ImportError.refused("不是 Playport 可读取的 ZIP 压缩包（\(error)）") }
         var entries: [(parts: [String], entry: ZipArchive.Entry)] = []
         var symlinks = 0
         for e in zip.entries {
             if e.isSymlink { symlinks += 1; continue }
             let parts = e.path.replacingOccurrences(of: "\\", with: "/").split(separator: "/").map(String.init)
-            guard !parts.isEmpty, !e.path.hasPrefix("/") else { throw ImportError.refused("\(e.path) is not a relative path") }
+            guard !parts.isEmpty, !e.path.hasPrefix("/") else { throw ImportError.refused("\(e.path) 不是相对路径") }
             if parts.first == "__MACOSX" || parts.last == ".DS_Store" { continue }
-            if e.encrypted { throw ImportError.refused("\(e.path) is encrypted") }
+            if e.encrypted { throw ImportError.refused("\(e.path) 已加密") }
             if !e.isDirectory, e.method != 0, e.method != 8 {
-                throw ImportError.refused("\(e.path) uses \(ZipArchive.methodName(e.method)) compression; only stored and deflate are supported")
+                throw ImportError.refused("\(e.path) 使用了 \(ZipArchive.methodName(e.method)) 压缩方式，仅支持无压缩（stored）和 deflate 格式")
             }
             entries.append((parts, e))
         }
@@ -183,7 +183,7 @@ public struct GameImporter: Sendable {
         }
         for d in dirs {
             do { for c in d.split(separator: "/") { try WindowsName.check(String(c)) } } catch { throw ImportError.refused("\(error)") }
-            if seen.contains(d.lowercased()) { throw ImportError.refused("\(d) is both a file and a folder") }
+            if seen.contains(d.lowercased()) { throw ImportError.refused("\(d) 同时作为文件和文件夹存在") }
         }
         guard !files.isEmpty else { throw ImportError.empty }
         return ImportPlan(source: .zip(url), name: name, files: files.sorted { $0.path < $1.path }, directories: dirs.sorted(),
@@ -215,7 +215,7 @@ public struct GameImporter: Sendable {
         let fm = FileManager.default
         try InstallFS.makeDirectory(layout.gamesRoot)
         let final = layout.gamesRoot.appendingPathComponent(folder, isDirectory: true)
-        guard !fm.fileExists(atPath: final.path) else { throw ImportError.refused("C:\\Games\\\(folder) already exists") }
+        guard !fm.fileExists(atPath: final.path) else { throw ImportError.refused("C:\\Games\\\(folder) 已存在") }
         let stage = self.stage(folder: folder)
         try InstallFS.makeDirectory(stage)
         for d in plan.directories { try InstallFS.makeDirectory(try InstallFS.resolveInside(stage, d, createParents: true)) }
@@ -259,7 +259,7 @@ public struct GameImporter: Sendable {
                     try Self.copy(src, part, tick)
                 }
             case .zip:
-                guard let zip, let e = byPath[f.from] else { throw ImportError.refused("\(f.from) is no longer in the archive") }
+                guard let zip, let e = byPath[f.from] else { throw ImportError.refused("压缩包中已找不到 \(f.from)") }
                 try Self.write(part) { sink in try zip.extract(e) { buf in try sink(buf); try tick(UInt64(buf.count)) } }
             }
             guard InstallFS.fileSize(part) == f.size else {
@@ -328,7 +328,7 @@ public struct GameImporter: Sendable {
 
     static func copy(_ src: URL, _ dst: URL, _ tick: (UInt64) throws -> Void) throws {
         let fd = sysOpen(src.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC, 0)
-        guard fd >= 0 else { throw ImportError.refused("\(src.lastPathComponent) cannot be read (errno \(errno))") }
+        guard fd >= 0 else { throw ImportError.refused("无法读取 \(src.lastPathComponent)（errno \(errno)）") }
         defer { _ = sysClose(fd) }
         try write(dst) { sink in
             let buf = UnsafeMutableRawBufferPointer.allocate(byteCount: 1 << 20, alignment: 16)

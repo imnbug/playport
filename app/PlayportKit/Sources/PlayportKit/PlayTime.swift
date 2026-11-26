@@ -98,10 +98,10 @@ extension Catalog {
 public enum PlayTime {
     /// `14 h`, `2 h 5 min`, `25 min`, `less than a minute`: whole minutes up to ten hours, then hours.
     public static func format(_ seconds: TimeInterval) -> String {
-        if seconds < 60 { return "less than a minute" }
+        if seconds < 60 { return "不到 1 分钟" }
         let minutes = Int(seconds / 60)
-        if minutes < 60 { return "\(minutes) min" }
+        if minutes < 60 { return "\(minutes) 分钟" }
         let h = minutes / 60, m = minutes % 60
-        return h >= 10 || m == 0 ? "\(h) h" : "\(h) h \(m) min"
+        return h >= 10 || m == 0 ? "\(h) 小时" : "\(h) 小时 \(m) 分钟"
     }
 }

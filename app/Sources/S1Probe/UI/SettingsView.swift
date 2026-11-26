@@ -97,7 +97,7 @@ struct SettingsView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text("Settings").font(PP.display(26)).foregroundStyle(PP.text)
+            Text("设置").font(PP.display(26)).foregroundStyle(PP.text)
                 .padding(.horizontal, 14).padding(.bottom, 10)
             // The list scrolls when the sections outgrow the height (a landscape phone
             // with the developer section); the ring keeps its entry in view.
@@ -112,7 +112,7 @@ struct SettingsView: View {
                                 .padding(.horizontal, 14)
                                 .frame(maxWidth: .infinity, minHeight: 37, alignment: .leading)
                                 .background(on ? PP.text : .clear, in: RoundedRectangle(cornerRadius: 10))
-                                .padItem(s.navItem, hint: "Open", cornerRadius: 10) {
+                                .padItem(s.navItem, hint: "打开", cornerRadius: 10) {
                                     navigation.settingsSection = s
                                     SettingsRing.enter()
                                 }
@@ -249,8 +249,8 @@ enum SettingsRing {
 
     /// What B does here, for the footer.
     static var backLabel: String {
-        if SettingsSection.isNavItem(PadFocus.shared.focused ?? "set:nav:") { return "Back" }
-        return AppNavigation.shared.licences.isEmpty ? "Sections" : "Back"
+        if SettingsSection.isNavItem(PadFocus.shared.focused ?? "set:nav:") { return "返回" }
+        return AppNavigation.shared.licences.isEmpty ? "分类" : "返回"
     }
 }
 
@@ -293,7 +293,7 @@ struct SettingsSwitchRow: View {
     @Binding var on: Bool
 
     var body: some View {
-        PadRow(id: "set:" + id, title: title, subtitle: subtitle, accessory: .toggle(on), hint: "Change") { on.toggle() }
+        PadRow(id: "set:" + id, title: title, subtitle: subtitle, accessory: .toggle(on), hint: "切换") { on.toggle() }
     }
 }
 
@@ -309,32 +309,32 @@ private struct GraphicsSettings: View {
     @AppStorage(DonorPool.key) private var donorPoolStored = DonorPoolSizing.Setting.autoStored
 
     var body: some View {
-        SettingsNote(text: "What every game uses unless you change it on the game's page.")
+        SettingsNote(text: "所有游戏的默认画面设置，除非你在单个游戏的详情页中另行修改。")
         let global = $launchSettings.global
         // The aspect ratio, then the resolution, the same levels in every shape (decision 0073).
         // Left is lower, right higher: 540p … Native; 30 fps … Off.
         let shape = launchSettings.global.aspect.flatMap(ScreenAspect.init(rawValue:)) ?? .phone
         let aspects = SettingSteps(values: ScreenAspect.allCases.map(\.rawValue), defaultValue: ScreenAspect.phone.rawValue)
-        valueRow("aspect", "Aspect ratio", shape == .phone ? "The phone's own shape" : "Bars at the sides or above and below",
+        valueRow("aspect", "画面比例", shape == .phone ? "适配手机自身屏幕比例" : "画面两侧或上下保留黑边",
                  aspects, name: { LaunchSettingsText.aspect(ScreenAspect(rawValue: $0) ?? .phone) }, value: global.aspect)
         let screens = SettingSteps(values: LaunchSettingsText.screens(shape).reversed(), defaultValue: LaunchSettings.defaultScreen)
-        valueRow("screen", "Resolution", "Higher is sharper, lower saves battery", screens,
+        valueRow("screen", "分辨率", "越高越清晰，越低越省电", screens,
                  name: { LaunchSettingsText.screen($0, pixels: false) }, value: global.screen)
         let limits = SettingSteps(values: LaunchSettingsText.frameLimits + [0], defaultValue: LaunchSettings.defaultFrameLimit)
-        valueRow("frameLimit", "Frame rate limit", "Lower saves battery and heat", limits,
+        valueRow("frameLimit", "帧率限制", "调低可节省电量并减少发热", limits,
                  name: LaunchSettingsText.frameLimit, value: global.frameLimit)
         let backends = SettingSteps(values: GraphicsBackend.allCases.filter { Manifest.has($0) || $0 == launchSettings.global.graphics },
                                     defaultValue: GraphicsBackend.default)
-        valueRow("graphics", "Direct3D", "Vulkan, or DXMT for Direct3D 10 and 11", backends,
+        valueRow("graphics", "Direct3D", "默认 Vulkan；Direct3D 10 和 11 游戏也可选 DXMT", backends,
                  name: LaunchSettingsText.graphics, value: global.graphics)
-        SettingsSwitchRow(id: "performanceOverlay", title: "Performance overlay",
-                          subtitle: "Frame rate, frame time and the phone's temperature over a game",
+        SettingsSwitchRow(id: "performanceOverlay", title: "性能监控悬浮窗",
+                          subtitle: "在游戏画面上方显示帧率、帧时间与机身温度",
                           on: $performanceOverlay)
         memoryRows
-        SettingsNote(text: "From each game's next start. 720p at 60 fps keeps the phone cool enough to hold its "
-                     + "frame rate; Native is the screen's full resolution, and Off runs a game as fast as the screen "
-                     + "allows. Another aspect ratio than the phone's shows the game with bars at its sides or above and below; "
-                     + "16:9 helps a game that shows only black on a screen as wide as the phone's. "
+        SettingsNote(text: "在每个游戏下次启动时生效。720p 搭配 60 fps 能让手机保持凉爽并稳定维持帧率；"
+                     + "「原生」使用屏幕完整分辨率，「关闭」帧率限制则会按屏幕支持的最高速度运行。"
+                     + "选择手机屏幕以外的画面比例会在画面两侧或上下留出黑边；"
+                     + "若部分游戏在手机超宽屏下显示黑屏，切换为 16:9 即可解决。"
                      + LaunchSettingsText.graphicsFooter)
     }
 
@@ -347,28 +347,28 @@ private struct GraphicsSettings: View {
             let _ = donorPoolStored
             let current = DonorPool.setting
             let options = Self.donorOptions
-            PadRow(id: "set:donorPool", title: "Donor memory", subtitle: "Memory from helpers that then end, for the game",
-                   value: options.first { $0.0 == current }?.1 ?? "\(current.stored) MB (fixed)", accessory: .chevron, hint: "Change") {
-                PadModal.shared.picker(title: "Donor memory", context: "Settings · Graphics",
-                                       note: "Auto takes the phone's default pool before the game starts and stops on low "
-                                           + "memory; any failure plays on ordinary memory. From each game's next start.",
+            PadRow(id: "set:donorPool", title: "扩展内存池", subtitle: "由辅助进程分配后移交游戏使用的额外内存",
+                   value: options.first { $0.0 == current }?.1 ?? "\(current.stored) MB（固定）", accessory: .chevron, hint: "更改") {
+                PadModal.shared.picker(title: "扩展内存池", context: "设置 · 画面",
+                                       note: "「自动」会在游戏启动前按机型默认大小申请内存池，并在系统内存紧张时自动停止；"
+                                           + "若申请失败，游戏仍会使用常规内存启动。在每个游戏下次启动时生效。",
                                        options: options.map { PadOption(id: "\($0.0.stored)", label: $0.1) },
                                        selected: "\(current.stored)") { donorPoolStored = Int($0) ?? 0 }
             }
         }
-        SettingsSwitchRow(id: "endGameSocialClub", title: "End a game's own Social Club",
-                          subtitle: "Rockstar's: after its sign-in, near the memory limit; never the game",
+        SettingsSwitchRow(id: "endGameSocialClub", title: "自动结束游戏自带的 Social Club",
+                          subtitle: "针对 Rockstar 游戏：完成登录且接近内存上限时结束该进程，绝不终止游戏本体",
                           on: $endGameSocialClub)
-        SettingsSwitchRow(id: "refuseGameSocialClubRestart", title: "Refuse its restarts",
-                          subtitle: "With the end on: the game's later Social Club starts fail",
+        SettingsSwitchRow(id: "refuseGameSocialClubRestart", title: "阻止 Social Club 重新启动",
+                          subtitle: "开启自动结束时生效：拦截游戏后续重新拉起 Social Club 的请求",
                           on: $refuseGameSocialClubRestart)
     }
 
     /// Off and Auto; a dev build also offers the fixed sizes to experiment with.
     private static var donorOptions: [(DonorPoolSizing.Setting, String)] {
-        var options: [(DonorPoolSizing.Setting, String)] = [(.off, "Off"), (.auto, "Auto")]
+        var options: [(DonorPoolSizing.Setting, String)] = [(.off, "关闭"), (.auto, "自动")]
         #if !PLAYPORT_RELEASE
-        options += DonorPoolSizing.fixedSizesMB.map { (.fixed($0), ByteCount.format(mb: $0) + " (fixed)") }
+        options += DonorPoolSizing.fixedSizesMB.map { (.fixed($0), ByteCount.format(mb: $0) + "（固定）") }
         #endif
         return options
     }
@@ -391,16 +391,16 @@ private struct DownloadSettings: View {
 
     var body: some View {
         Color.clear.frame(height: 42)
-        SettingsSwitchRow(id: "autoUpdate", title: "Update games by themselves",
-                          subtitle: "Queued when Steam has a new version", on: $autoUpdate)
-        SettingsSwitchRow(id: "cellular", title: "Download over cellular",
-                          subtitle: "Wi-Fi only when off · " + network.summary, on: $cellular)
-        SettingsSwitchRow(id: "dim", title: "Dim the screen while downloading",
-                          subtitle: "After a minute without input", on: $dim)
-        SettingsSwitchRow(id: "steamCloud", title: "Sync saves with Steam Cloud",
-                          subtitle: "For every game that supports it", on: $steamCloud)
-        SettingsNote(text: "A game's saves come from Steam Cloud when its page opens, and go back after a play. "
-                     + "A game's options can turn Steam Cloud off for that game alone.")
+        SettingsSwitchRow(id: "autoUpdate", title: "自动更新游戏",
+                          subtitle: "当 Steam 发布新版本时自动加入下载队列", on: $autoUpdate)
+        SettingsSwitchRow(id: "cellular", title: "使用蜂窝网络下载",
+                          subtitle: "关闭时仅通过 Wi-Fi 下载 · " + network.summary, on: $cellular)
+        SettingsSwitchRow(id: "dim", title: "下载时调暗屏幕",
+                          subtitle: "无操作一分钟后自动变暗", on: $dim)
+        SettingsSwitchRow(id: "steamCloud", title: "使用 Steam 云同步存档",
+                          subtitle: "适用于所有支持云存档的游戏", on: $steamCloud)
+        SettingsNote(text: "打开游戏详情页时会从 Steam 云获取最新存档，结束游玩后会将存档同步回云端。"
+                     + "你也可以在单个游戏的「游戏选项」中单独关闭该游戏的云存档。")
     }
 }
 
@@ -421,46 +421,45 @@ private struct ControlsSettings: View {
         Color.clear.frame(height: 42)
         let shows = ControlsShow.allCases
         let current = ControlsShow(rawValue: show) ?? .automatic
-        PadValueRow(id: "set:controlsShow", title: "On-screen controls", subtitle: Self.showSubtitle(current),
+        PadValueRow(id: "set:controlsShow", title: "触屏按键", subtitle: Self.showSubtitle(current),
                     values: shows.map(\.title), index: shows.firstIndex(of: current) ?? 0) { show = shows[$0].rawValue }
         // Every game's layout unless it has its own or a compatibility default (SettingsControls.dc.html).
         let starts = OnScreenLayout.startingChoices
-        PadValueRow(id: "set:controlsStartingLayout", title: "Starting layout", subtitle: "Each game can pick its own",
+        PadValueRow(id: "set:controlsStartingLayout", title: "初始布局", subtitle: "每个游戏可单独选择各自布局",
                     values: starts.map(OnScreenLayout.startingTitle),
                     index: starts.firstIndex(of: OnScreenLayout(rawValue: startingLayout)) ?? 0) {
             startingLayout = starts[$0]?.rawValue ?? ""
         }
         let steps = ControlsOpacity.steps
-        PadValueRow(id: "set:controlsOpacity", title: "Opacity", subtitle: "How much of the game shows through",
+        PadValueRow(id: "set:controlsOpacity", title: "不透明度", subtitle: "按键透出底层游戏画面的程度",
                     values: steps.map(ControlsOpacity.label),
                     index: steps.firstIndex(of: ControlsOpacity.step(opacity, by: 0)) ?? 0) { opacity = steps[$0] }
         let dpads = OnScreenDpad.allCases
-        PadValueRow(id: "set:controlsDpad", title: "D-pad", subtitle: "Above the left stick",
+        PadValueRow(id: "set:controlsDpad", title: "十字键", subtitle: "位于左摇杆上方",
                     values: dpads.map(\.title),
                     index: dpads.firstIndex(of: OnScreenDpad(rawValue: dpad) ?? .off) ?? 0) { dpad = dpads[$0].rawValue }
         let sticks = OnScreenRightStick.allCases
-        PadValueRow(id: "set:controlsRightStick", title: "Right stick", subtitle: "Where it goes beside A/B/X/Y",
+        PadValueRow(id: "set:controlsRightStick", title: "右摇杆", subtitle: "在 A/B/X/Y 按键旁的位置",
                     values: sticks.map(\.title),
                     index: sticks.firstIndex(of: OnScreenRightStick(rawValue: rightStick) ?? .off) ?? 0) {
             rightStick = sticks[$0].rawValue
         }
-        SettingsSwitchRow(id: "controlsHaptics", title: "A tap you can feel", subtitle: "Haptics when a control is pressed",
+        SettingsSwitchRow(id: "controlsHaptics", title: "触觉反馈", subtitle: "按下触屏控件时提供振动反馈",
                           on: $haptics)
-        SettingsNote(text: "Each game can turn them off or change these in the in-game menu's Controls; a "
-                     + "three-finger tap on the game opens that menu, as holding a controller's Home button does. Connect a controller in iOS "
-                     + "Settings › Bluetooth. Playport and its games use the one you pressed last.")
+        SettingsNote(text: "每个游戏均可在游戏内菜单的「操控」中单独关闭或调整这些选项；"
+                     + "三指轻点游戏画面或长按手柄 Home 键即可呼出游戏内菜单。若要连接实体手柄，请前往 iOS「设置 › 蓝牙」配对；Playport 与游戏会自动使用你最后按下的手柄。")
         if router.controllers.isEmpty {
-            SettingsInfoRow(id: "controller:none", title: "No controller", subtitle: "Touch works everywhere meanwhile")
+            SettingsInfoRow(id: "controller:none", title: "未连接手柄", subtitle: "在此期间可全程使用触屏操作")
         }
         ForEach(Array(router.controllers.enumerated()), id: \.offset) { i, c in
             SettingsInfoRow(id: "controller:\(i)", title: c.name,
-                            subtitle: ([i == 0 ? "In use" : nil, c.gyro ? "has a gyro" : nil].compactMap { $0 }
+                            subtitle: ([i == 0 ? "正在使用" : nil, c.gyro ? "支持陀螺仪" : nil].compactMap { $0 }
                                 .joined(separator: " · ")).nilIfEmpty,
                             value: battery(c))
         }
         // The Controller page for every game (UI/ControllerMapView.swift).
-        PadRow(id: ControllerMapView.settingsRowID, title: "Controller", subtitle: "What a controller does in every game",
-               value: store.defaults.controllerMap.mode.title, accessory: .chevron, hint: "Open") {
+        PadRow(id: ControllerMapView.settingsRowID, title: "手柄映射", subtitle: "设置在所有游戏中手柄按键的默认行为",
+               value: store.defaults.controllerMap.mode.title, accessory: .chevron, hint: "打开") {
             AppNavigation.shared.openSettingsControllerMap()
         }
         GyroDefaultsRows()
@@ -469,15 +468,15 @@ private struct ControlsSettings: View {
 
     private static func showSubtitle(_ s: ControlsShow) -> String {
         switch s {
-        case .automatic: "Shown while no controller is connected"
-        case .always: "Shown with a controller too"
-        case .never: "Off unless a game turns them on"
+        case .automatic: "未连接实体手柄时自动显示"
+        case .always: "连接实体手柄时也始终显示"
+        case .never: "默认关闭，除非在单个游戏中开启"
         }
     }
 
     private func battery(_ c: PadRouter.Controller) -> String {
-        guard let b = c.battery else { return c.charging ? "Charging" : "Battery not reported" }
-        return "Battery \(b)%" + (c.charging ? ", charging" : "")
+        guard let b = c.battery else { return c.charging ? "正在充电" : "未报告电量" }
+        return "电量 \(b)%" + (c.charging ? "，正在充电" : "")
     }
 }
 
@@ -487,14 +486,14 @@ private struct StorageSettings: View {
     @ObservedObject private var library = LibraryModel.shared
 
     var body: some View {
-        SettingsNote(text: "Games and their saves live inside Playport. Deleting the app deletes them.")
-        SettingsInfoRow(id: "free", title: "Free on this phone", value: library.freeBytes.map(ByteCount.format) ?? "Unknown")
+        SettingsNote(text: "所有游戏及其存档均保存在 Playport 应用内部。删除应用会一并清空它们。")
+        SettingsInfoRow(id: "free", title: "本机可用空间", value: library.freeBytes.map(ByteCount.format) ?? "未知")
         let used = library.catalog.titles.compactMap(\.sizeBytes).reduce(0, +)
-        SettingsInfoRow(id: "games", title: "Games", subtitle: "\(library.catalog.titles.count) installed",
+        SettingsInfoRow(id: "games", title: "已装游戏", subtitle: "共安装 \(library.catalog.titles.count) 款",
                         value: ByteCount.format(used))
         ForEach(library.catalog.titles.sorted { ($0.sizeBytes ?? 0) > ($1.sizeBytes ?? 0) }) { t in
-            PadRow(id: "set:title:\(t.id)", title: t.name, value: t.sizeBytes.map(ByteCount.format) ?? "Unknown",
-                   accessory: .chevron, hint: "Open") {
+            PadRow(id: "set:title:\(t.id)", title: t.name, value: t.sizeBytes.map(ByteCount.format) ?? "未知",
+                   accessory: .chevron, hint: "打开") {
                 AppNavigation.shared.openTitle(t.id)
             }
         }
@@ -502,9 +501,9 @@ private struct StorageSettings: View {
         // size, and the one way to remove them (PLA-171); a game that lists them downloads them again.
         if let sharedBytes {
             PadRow(id: "set:steamworks-shared", title: CommonRedistributables.installDir,
-                   subtitle: "Steam's redistributables, downloaded again when needed",
+                   subtitle: "Steam 共享运行库组件，需要时会自动重新下载",
                    value: ByteCount.format(sharedBytes), destructive: true,
-                   hint: launch.running || removingShared ? "" : "Remove") {
+                   hint: launch.running || removingShared ? "" : "移除") {
                 guard !launch.running, !removingShared else { return }
                 removingShared = true
                 Task {
@@ -515,9 +514,9 @@ private struct StorageSettings: View {
         }
         // FEX's disk cache (decision 0056) and the runtime's image copies (decision 0167): their
         // size, and the one way to clear them (decision 0012).
-        PadRow(id: "set:emulator-cache", title: "Emulator cache",
-               subtitle: "Speeds up later starts; cleared past 5 GB or when space is low",
-               value: cacheBytes.map(ByteCount.format) ?? "…", hint: launch.running ? "" : "Clear") {
+        PadRow(id: "set:emulator-cache", title: "模拟器缓存",
+               subtitle: "加快后续启动速度；超过 5 GB 或存储空间不足时自动清理",
+               value: cacheBytes.map(ByteCount.format) ?? "…", hint: launch.running ? "" : "清理") {
             guard !launch.running, !clearing else { return }
             clearing = true
             Task {
@@ -529,9 +528,9 @@ private struct StorageSettings: View {
             }
         }
         // The graphics backends' shader caches (PLA-279): their size, and the one way to clear them.
-        PadRow(id: "set:shader-cache", title: "Shader cache",
-               subtitle: "Speeds up later starts; Mesa's part is capped at 1 GB",
-               value: shaderBytes.map(ByteCount.format) ?? "…", hint: launch.running ? "" : "Clear") {
+        PadRow(id: "set:shader-cache", title: "着色器缓存",
+               subtitle: "加快后续启动速度；Mesa 缓存上限为 1 GB",
+               value: shaderBytes.map(ByteCount.format) ?? "…", hint: launch.running ? "" : "清理") {
             guard !launch.running, !clearingShaders else { return }
             clearingShaders = true
             Task {
@@ -562,28 +561,28 @@ private struct StorageSettings: View {
 
 private struct AboutSettings: View {
     var body: some View {
-        SettingsNote(text: "Playport runs Windows games on this iPhone. It is built on willfaust/Madeira: "
-                     + "Wine, FEX-Emu and DXMT in one process.")
-        SettingsInfoRow(id: "version", title: "Version", value: version)
+        SettingsNote(text: "Playport 可在此 iPhone 上运行 Windows 游戏。基于 willfaust/Madeira 构建："
+                     + "在同一进程内集成 Wine、FEX-Emu 与 DXMT。")
+        SettingsInfoRow(id: "version", title: "版本", value: version)
         #if PLAYPORT_RELEASE
-        SettingsInfoRow(id: "variant", title: "Build", value: "Release")
+        SettingsInfoRow(id: "variant", title: "构建类型", value: "正式版")
         #else
-        SettingsInfoRow(id: "variant", title: "Build", value: "Development")
+        SettingsInfoRow(id: "variant", title: "构建类型", value: "开发版")
         #endif
-        SettingsInfoRow(id: "abi", title: "Runtime interface", value: "wine_host ABI \(wine_host_abi_version())")
-        PadRow(id: LicencePage.list.row, title: "Licences", subtitle: "GPL-3.0-or-later, and each component's own",
-               accessory: .chevron, hint: "Open") {
+        SettingsInfoRow(id: "abi", title: "运行时接口", value: "wine_host ABI \(wine_host_abi_version())")
+        PadRow(id: LicencePage.list.row, title: "开源许可", subtitle: "GPL-3.0-or-later 及各组件的独立许可证",
+               accessory: .chevron, hint: "打开") {
             AppNavigation.shared.openLicence(.list)
         }
-        SettingsNote(text: "\(BundledLicences.copyright). Playport is free software under the GNU GPL and comes "
-                     + "with ABSOLUTELY NO WARRANTY.")
+        SettingsNote(text: "\(BundledLicences.copyright)。Playport 是遵循 GNU GPL 发布的自由软件，"
+                     + "不提供任何形式的担保（ABSOLUTELY NO WARRANTY）。")
     }
 
     private var version: String {
         let info = Bundle.main.infoDictionary ?? [:]
         let short = info["CFBundleShortVersionString"] as? String
         let build = info["CFBundleVersion"] as? String
-        return [short, build.map { "(\($0))" }].compactMap { $0 }.joined(separator: " ").nilIfEmpty ?? "Unknown"
+        return [short, build.map { "(\($0))" }].compactMap { $0 }.joined(separator: " ").nilIfEmpty ?? "未知"
     }
 }
 

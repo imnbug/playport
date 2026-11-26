@@ -27,9 +27,9 @@ public enum ActionPickerTab: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .keyboard: "Keyboard"
-        case .mouse: "Mouse"
-        case .controller: "Controller"
+        case .keyboard: "键盘"
+        case .mouse: "鼠标"
+        case .controller: "手柄"
         case .playport: "Playport"
         }
     }
@@ -354,12 +354,12 @@ public enum ActionText {
     /// `Space`, `Shift+1`, `Left button`, `Mouse look`, `Pad A`, `Playport menu`, `Touch keyboard`; nil is `Nothing`.
     public static func name(_ a: InputAction?) -> String {
         switch a {
-        case nil: "Nothing"
+        case nil: "未绑定"
         case .key(let vk, let m)?: KeyModifiers.names.filter { m.contains($0.0) }.map { modifier($0.0) + "+" }.joined() + key(vk)
         case .mouse(let m)?: mouse(m)
-        case .pad(let c)?: "Pad " + pad(c)
-        case .playport(.menu)?: "Playport menu"
-        case .playport(.keyboard)?: "Touch keyboard"
+        case .pad(let c)?: "手柄 " + pad(c)
+        case .playport(.menu)?: "Playport 菜单"
+        case .playport(.keyboard)?: "虚拟键盘"
         }
     }
 
@@ -369,12 +369,12 @@ public enum ActionText {
 
     public static func mouse(_ m: MouseAction) -> String {
         switch m {
-        case .left: "Left button"
-        case .right: "Right button"
-        case .middle: "Middle button"
-        case .wheelUp: "Wheel up"
-        case .wheelDown: "Wheel down"
-        case .move: "Mouse look"
+        case .left: "鼠标左键"
+        case .right: "鼠标右键"
+        case .middle: "鼠标中键"
+        case .wheelUp: "滚轮向上"
+        case .wheelDown: "滚轮向下"
+        case .move: "鼠标视角"
         }
     }
 
@@ -389,16 +389,16 @@ public enum ActionText {
         case .rb: "RB"
         case .lt: "LT"
         case .rt: "RT"
-        case .start: "Menu"
-        case .back: "View"
+        case .start: "菜单键"
+        case .back: "视图键"
         case .ls: "L3"
         case .rs: "R3"
-        case .up: "D-pad up"
-        case .down: "D-pad down"
-        case .left: "D-pad left"
-        case .right: "D-pad right"
-        case .leftStick: "Left stick"
-        case .rightStick: "Right stick"
+        case .up: "十字键上"
+        case .down: "十字键下"
+        case .left: "十字键左"
+        case .right: "十字键右"
+        case .leftStick: "左摇杆"
+        case .rightStick: "右摇杆"
         }
     }
 

@@ -314,28 +314,28 @@ final class InGameMenu: ObservableObject {
     // MARK: Screenshot
 
     private func screenshot() {
-        guard shot != "Saving…" else { return }
+        guard shot != "正在保存…" else { return }
         guard let texture = PacedMetalLayer.lastPresented, let image = Self.image(of: texture) else {
-            shot = "No frame to save"
+            shot = "无画面可保存"
             Self.log(PacedMetalLayer.lastPresented.map { "screenshot: frame \($0.width)x\($0.height) not read" }
                      ?? "screenshot: no frame")
             return
         }
-        shot = "Saving…"
+        shot = "正在保存…"
         Self.log("screenshot: \(Int(image.size.width))x\(Int(image.size.height))")
         #if !PLAYPORT_RELEASE
         Self.keepInDocuments(image)
         #endif
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             guard status == .authorized || status == .limited else {
-                Task { @MainActor in InGameMenu.shared.saved("Photos access is off", "not allowed (\(status.rawValue))") }
+                Task { @MainActor in InGameMenu.shared.saved("相册权限未开启", "not allowed (\(status.rawValue))") }
                 return
             }
             PHPhotoLibrary.shared().performChanges({
                 PHAssetChangeRequest.creationRequestForAsset(from: image)
             }) { ok, error in
                 let why = error.map { "\($0.localizedDescription)" } ?? "failed"
-                Task { @MainActor in InGameMenu.shared.saved(ok ? "Saved to Photos" : "Not saved", ok ? "saved to Photos" : why) }
+                Task { @MainActor in InGameMenu.shared.saved(ok ? "已保存到相册" : "保存失败", ok ? "saved to Photos" : why) }
             }
         }
     }
@@ -489,7 +489,7 @@ struct InGameMenuView: View {
             if downloadsWaiting && model.menu.panel == nil {
                 HStack(spacing: 8) {
                     Circle().fill(PP.muted).frame(width: 8, height: 8)
-                    Text("Downloads paused while you play")
+                    Text("游戏期间已暂停下载")
                 }
                 .font(.system(size: 13)).foregroundStyle(PP.soft)
                 .padding(.horizontal, 12).padding(.vertical, 6)
@@ -502,12 +502,12 @@ struct InGameMenuView: View {
                 HStack {
                     Spacer()
                     PadFooter(hints: model.menu.panel == nil ? [
-                        PadHint(button: .a, label: "Choose") { model.press(.a) },
-                        PadHint(button: .b, label: "Back to game") { model.resume() },
+                        PadHint(button: .a, label: "选择") { model.press(.a) },
+                        PadHint(button: .b, label: "返回游戏") { model.resume() },
                     ] : [
-                        PadHint(button: .a, label: model.menu.panel == .controllerMap ? "Edit controller…"
-                                : model.menu.panel == .layout ? "Edit layout…" : "Change") { model.press(.a) },
-                        PadHint(button: .b, label: "Back") { model.press(.b) },
+                        PadHint(button: .a, label: model.menu.panel == .controllerMap ? "编辑手柄…"
+                                : model.menu.panel == .layout ? "编辑布局…" : "更改") { model.press(.a) },
+                        PadHint(button: .b, label: "返回") { model.press(.b) },
                     ], leading: true)
                     .fixedSize()
                 }
@@ -555,10 +555,10 @@ struct InGameMenuView: View {
         switch item {
         case .resume: return nil
         case .controls: return controls.state.summary
-        case .keyboard: return controls.keyboard ? "Open" : nil
-        case .text: return textBar.isOpen ? "Open" : nil
-        case .screenshot: return model.shot ?? "Saved to Photos"
-        case .overlay: return model.overlay ? "On" : "Off"
+        case .keyboard: return controls.keyboard ? "已打开" : nil
+        case .text: return textBar.isOpen ? "已打开" : nil
+        case .screenshot: return model.shot ?? "保存至相册"
+        case .overlay: return model.overlay ? "开启" : "关闭"
         case .padLayout: return pad.layout.name
         case .padEdit: return nil
         case .controller:
@@ -570,7 +570,7 @@ struct InGameMenuView: View {
             #endif
             return QuickMenu.controller(name: router.controller?.name, battery: router.controller?.battery,
                                         scriptedPad: scripted)
-        case .quit: return model.quitting ? "Closing…" : "Saves first"
+        case .quit: return model.quitting ? "正在关闭…" : "退出前自动保存"
         }
     }
 
@@ -600,8 +600,8 @@ private struct ControlsPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("Controls").font(PP.display(20))
-                Text("For this game · saved as you change them").font(.system(size: 12)).foregroundStyle(PP.muted)
+                Text("操控").font(PP.display(20))
+                Text("仅针对此游戏 · 修改即时保存").font(.system(size: 12)).foregroundStyle(PP.muted)
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
             .padding(.bottom, 6)
@@ -627,7 +627,7 @@ private struct ControlsPanel: View {
                 rowView(r).id(r)
             }
             if !state.visible && state.layout != .off {
-                Text("Hidden while a controller is connected.").font(.system(size: 12)).foregroundStyle(PP.muted)
+                Text("连接手柄时自动隐藏。").font(.system(size: 12)).foregroundStyle(PP.muted)
                     .padding(.top, 2)
             }
         }
@@ -638,7 +638,7 @@ private struct ControlsPanel: View {
         switch r {
         case .layout:
             // "Edit layout…" under the title: the layout editor over the paused game (A on the row too).
-            row(.layout, subtitle: "Edit layout…", edit: { model.openLayoutEditor() }) {
+            row(.layout, subtitle: "编辑布局…", edit: { model.openLayoutEditor() }) {
                 choices(.layout, OnScreenLayout.allCases, state.layout, title: \.shortTitle, compact: true)
             }
         case .dpad: row(.dpad) { choices(.dpad, OnScreenDpad.allCases, state.dpad, title: \.title) }
@@ -648,7 +648,7 @@ private struct ControlsPanel: View {
         case .gyroSensitivity: row(.gyroSensitivity) { stepper(.gyroSensitivity, GyroText.sensitivity(gyro.sensitivity)) }
         case .controllerMap:
             // "Edit controller…" under the title: the full page over the paused game (A on the row too).
-            row(.controllerMap, subtitle: "Edit controller…", edit: { model.openEditor() }) {
+            row(.controllerMap, subtitle: "编辑手柄…", edit: { model.openEditor() }) {
                 choices(.controllerMap, ControllerMap.Mode.allCases, map.mode, title: \.shortTitle, compact: true)
             }
         }
@@ -657,8 +657,8 @@ private struct ControlsPanel: View {
     /// Under Gyro aim: the gyro it reads (QuickMenuControls.dc.html's "iPhone gyro").
     private var gyroSource: String {
         let use = GyroText.sourceInUse(gyro.source, device: GyroSensors.shared.device(for: gyro))
-        guard gyro.output != .off else { return "Moves the view as you turn" }
-        return use.why ?? "Always on · " + use.value + " gyro"
+        guard gyro.output != .off else { return "转动设备即可移动视角" }
+        return use.why ?? "始终开启 · " + use.value + " 陀螺仪"
     }
 
     /// `edit`: the title and subtitle are a tap target too, the subtitle a link (the Controller row's Edit controller…).
@@ -761,5 +761,5 @@ private struct InGameControllerPage: View {
 
 private extension GyroOutput {
     /// The panel's short word for it: "Stick", so Off, Mouse and Stick fit beside the gyro's source.
-    var gyroTitle: String { self == .rightStick ? "Stick" : GyroText.output(self) }
+    var gyroTitle: String { self == .rightStick ? "摇杆" : GyroText.output(self) }
 }

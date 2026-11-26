@@ -37,28 +37,28 @@ struct SetupCheckSettings: View {
     private var tunnelUp: Bool? { state.tunnelUp }
 
     var body: some View {
-        SettingsNote(text: "What a game needs from this phone. Playport checks it again by itself before every game.")
-        PadRow(id: "set:setup:checklist", title: "Setup checklist",
-               subtitle: "The steps a first run shows",
-               value: "\(SetupChecklist.doneCount(state.facts)) of \(SetupStep.allCases.count) done", accessory: .chevron,
-               hint: "Open") {
+        SettingsNote(text: "运行游戏所需的手机环境条件。每次启动游戏前 Playport 都会自动重新检查。")
+        PadRow(id: "set:setup:checklist", title: "初始设置向导",
+               subtitle: "首次启动时显示的四步检查清单",
+               value: "已完成 \(SetupChecklist.doneCount(state.facts)) / \(SetupStep.allCases.count)", accessory: .chevron,
+               hint: "打开") {
             AppNavigation.shared.openSetup()
         }
         #if !PLAYPORT_RELEASE
         // A dev build sees the checklist as a first run shows it, without deleting the
         // pairing or the Steam session: A completes each simulated step.
-        PadRow(id: "set:setup:preview", title: "Preview a first run", subtitle: "Dev: A completes simulated steps; nothing changes on the phone",
-               accessory: .chevron, hint: "Preview") { preview(onPhone: SetupState.pairsOnPhone) }
-        PadRow(id: "set:setup:preview26", title: "Preview a first run on iOS 26", subtitle: "Dev: a pairing file from Files",
-               accessory: .chevron, hint: "Preview") { preview(onPhone: false) }
+        PadRow(id: "set:setup:preview", title: "预览首次运行向导", subtitle: "开发调试：按 A 完成模拟步骤，不会改动手机实际设置",
+               accessory: .chevron, hint: "预览") { preview(onPhone: SetupState.pairsOnPhone) }
+        PadRow(id: "set:setup:preview26", title: "预览 iOS 26 首次运行向导", subtitle: "开发调试：从「文件」选择导入配对文件",
+               accessory: .chevron, hint: "预览") { preview(onPhone: false) }
         #endif
-        SettingsInfoRow(id: "setup:controller", title: "Controller",
-                        subtitle: router.controller.map { "\($0.name) connected" } ?? "None connected; touch works too",
-                        value: router.controller == nil ? "Optional" : "Ready")
+        SettingsInfoRow(id: "setup:controller", title: "手柄",
+                        subtitle: router.controller.map { "已连接 \($0.name)" } ?? "未连接；也可使用触屏操作",
+                        value: router.controller == nil ? "可选" : "已就绪")
         jitRows
-        PadRow(id: "set:setup:vpn", title: "LocalDevVPN", subtitle: "JIT reaches this phone through it",
-               value: tunnelUp.map { $0 ? "Connected" : "Not connected" } ?? "Checking…", accessory: .chevron,
-               hint: "Connect") {
+        PadRow(id: "set:setup:vpn", title: "LocalDevVPN", subtitle: "JIT 需要通过此隧道连接本机",
+               value: tunnelUp.map { $0 ? "已连接" : "未连接" } ?? "正在检查…", accessory: .chevron,
+               hint: "连接") {
             LocalDevVPN.connect { outcome in
                 if outcome != .notInstalled, builtIn.pairingFile { builtIn.check() }
                 state.readTunnel()
@@ -82,8 +82,8 @@ struct SetupCheckSettings: View {
     private var steamRow: some View {
         let f = state.facts
         let stores = f.signedInStores
-        return PadRow(id: "set:setup:steam", title: "Accounts", subtitle: stores.isEmpty ? "Optional: Steam, GOG or Epic Games, for your games" : nil,
-                      value: stores.isEmpty ? "Signed out" : stores.joined(separator: ", "), accessory: .chevron, hint: "Open") {
+        return PadRow(id: "set:setup:steam", title: "账号", subtitle: stores.isEmpty ? "可选：登录 Steam、GOG 或 Epic Games 获取游戏库" : nil,
+                      value: stores.isEmpty ? "未登录" : stores.joined(separator: "、"), accessory: .chevron, hint: "打开") {
             AppNavigation.shared.openSettings(section: .accounts)
         }
     }
@@ -91,9 +91,9 @@ struct SetupCheckSettings: View {
     // MARK: JIT
 
     @ViewBuilder private var jitRows: some View {
-        PadRow(id: "set:setup:jitMethod", title: "JIT method",
-               subtitle: JitProvider.inLiveContainer ? "Playport runs inside LiveContainer" : nil,
-               value: method.label, accessory: .chevron, hint: "Change") {
+        PadRow(id: "set:setup:jitMethod", title: "JIT 方式",
+               subtitle: JitProvider.inLiveContainer ? "Playport 当前运行在 LiveContainer 内" : nil,
+               value: method.label, accessory: .chevron, hint: "更改") {
             guard !TitleLaunch.shared.running else { return }
             JitMethodPicker.show()
         }
@@ -101,7 +101,7 @@ struct SetupCheckSettings: View {
             // Found before any check: the helper extension was removed (a re-signer, or
             // SideStore's "remove app extensions"), so nothing below can work.
             SettingsInfoRow(id: "setup:jit", title: "JIT", subtitle: JitFailureReason.helperMissingMessage,
-                            value: "Helper missing")
+                            value: "缺少助手扩展")
         } else if method == .builtIn {
             builtInRows
         } else {
@@ -118,11 +118,11 @@ struct SetupCheckSettings: View {
         let lc = JitProvider.inLiveContainer
         switch method {
         case .stikDebug:
-            return lc ? "Play opens StikDebug. Turn on Use LiveContainer's Bundle ID in LiveContainer's settings."
-                : "Play opens StikDebug, which enables JIT with its universal.js script and comes back to Playport."
+            return lc ? "点击「开始游戏」会自动打开 StikDebug。请在 LiveContainer 设置中开启「使用 LiveContainer 的 Bundle ID」。"
+                : "点击「开始游戏」会自动打开 StikDebug，通过 universal.js 脚本启用 JIT 后返回 Playport。"
         default:
-            return lc ? "Launch Playport with JIT from LiveContainer, with the universal.js script. Each game needs a fresh launch."
-                : "Play waits for JIT from another app. Its script must be universal.js."
+            return lc ? "请从 LiveContainer 使用 JIT 启动 Playport，并搭配 universal.js 脚本。每次启动新游戏都需要重新启动。"
+                : "点击「开始游戏」后会等待其他应用提供 JIT，其脚本必须设为 universal.js。"
         }
     }
 
@@ -134,50 +134,50 @@ struct SetupCheckSettings: View {
         pairingRow
         importRow
         if builtIn.pairingFile, !builtIn.busy, builtIn.status != "ready" {
-            PadRow(id: "set:setup:check", title: "Check again", hint: "Check") { builtIn.check() }
+            PadRow(id: "set:setup:check", title: "重新检查", hint: "检查") { builtIn.check() }
         }
         if builtIn.pairingFile, !builtIn.busy, builtIn.status == "not ready" {
-            PadRow(id: "set:setup:ddi", title: "Download the disk image again", hint: "Download") { builtIn.resetDDI() }
+            PadRow(id: "set:setup:ddi", title: "重新下载开发者磁盘映像", hint: "下载") { builtIn.resetDDI() }
         }
     }
 
     private var statusText: String {
         if !builtIn.pairingFile {
-            if #available(iOS 27.0, *) { return "Needs setup" }
-            return "Needs a pairing file"
+            if #available(iOS 27.0, *) { return "需要设置" }
+            return "需要配对文件"
         }
-        if builtIn.busy { return "Checking…" }
+        if builtIn.busy { return "正在检查…" }
         switch builtIn.status {
-        case "ready": return "Ready"
-        case "unreachable": return "Can't connect"
-        case "not ready": return "Not ready"
-        default: return "Not checked yet"
+        case "ready": return "已就绪"
+        case "unreachable": return "无法连接"
+        case "not ready": return "未就绪"
+        default: return "尚未检查"
         }
     }
 
     private var advice: String? {
-        if builtIn.detail?.hasPrefix("import failed") ?? false { return "That file is not a pairing file." }
-        guard builtIn.pairingFile, !builtIn.busy else { return "Games need it to run fast" }
+        if builtIn.detail?.hasPrefix("import failed") ?? false { return "所选文件不是有效的配对文件。" }
+        guard builtIn.pairingFile, !builtIn.busy else { return "游戏全速运行所必需的组件" }
         switch builtIn.status {
-        case "unreachable": return "LocalDevVPN is not connected. Playport turns it on when you press Play."
+        case "unreachable": return "LocalDevVPN 未连接。点击「开始游戏」时 Playport 会自动开启它。"
         case "not ready":
-            return (builtIn.failureReason?.message ?? "Playport could not prepare the phone.") + " Check again."
-        default: return "Games need it to run fast"
+            return (builtIn.failureReason?.message ?? "Playport 无法完成本机调试环境准备。") + " 请重新检查。"
+        default: return "游戏全速运行所必需的组件"
         }
     }
     #else
     /// The full panel: the helper's raw readiness and reason, the reset.
     @ViewBuilder private var builtInRows: some View {
         SettingsInfoRow(id: "setup:jit", title: "JIT", subtitle: builtIn.detail,
-                        value: builtIn.busy ? "Checking…" : builtIn.readiness)
-        SettingsInfoRow(id: "setup:pairingFile", title: "Pairing file", value: builtIn.pairingFile ? "Imported" : "Missing")
+                        value: builtIn.busy ? "正在检查…" : builtIn.readiness)
+        SettingsInfoRow(id: "setup:pairingFile", title: "配对文件", value: builtIn.pairingFile ? "已导入" : "缺失")
         pairingRow
         importRow
-        PadRow(id: "set:setup:check", title: "Check readiness", hint: "Check") {
+        PadRow(id: "set:setup:check", title: "检查就绪状态", hint: "检查") {
             if builtIn.pairingFile, !builtIn.busy { builtIn.check() }
         }
-        PadRow(id: "set:setup:ddi", title: "Reset Developer Disk Image",
-               subtitle: "It downloads and mounts by itself once per boot", hint: "Reset") {
+        PadRow(id: "set:setup:ddi", title: "重置开发者磁盘映像",
+               subtitle: "每次设备重启后会自动重新下载并挂载一次", hint: "重置") {
             if builtIn.pairingFile, !builtIn.busy { builtIn.resetDDI() }
         }
     }
@@ -185,9 +185,9 @@ struct SetupCheckSettings: View {
 
     @ViewBuilder private var pairingRow: some View {
         if #available(iOS 27.0, *) {
-            PadRow(id: "set:setup:pair", title: builtIn.pairingFile ? "Pair again" : "Pair this iPhone",
-                   subtitle: method == .builtIn ? "Developer Mode and LocalDevVPN need your approval"
-                       : "Lets Playport restart itself after a game", accessory: .chevron, hint: "Pair") {
+            PadRow(id: "set:setup:pair", title: builtIn.pairingFile ? "重新配对" : "配对此 iPhone",
+                   subtitle: method == .builtIn ? "需要你批准开启开发者模式与 LocalDevVPN"
+                       : "允许 Playport 在退出游戏后自动重启应用", accessory: .chevron, hint: "配对") {
                 guard !builtIn.busy, !pairing.busy, !TitleLaunch.shared.spent else { return }
                 setup.begin(repair: builtIn.pairingFile)
             }
@@ -195,8 +195,8 @@ struct SetupCheckSettings: View {
     }
 
     private var importRow: some View {
-        PadRow(id: "set:setup:import", title: "Import pairing file", subtitle: "Advanced; choosing a file uses touch",
-               accessory: .chevron, hint: "Choose file") {
+        PadRow(id: "set:setup:import", title: "导入配对文件", subtitle: "高级选项；选择文件需要使用触屏操作",
+               accessory: .chevron, hint: "选择文件") {
             guard !builtIn.busy, !pairing.busy else { return }
             SettingsImport.requests.send()
         }
@@ -205,19 +205,19 @@ struct SetupCheckSettings: View {
     // MARK: memory
 
     @ViewBuilder private var memoryRows: some View {
-        SettingsInfoRow(id: "setup:memory", title: "Memory limit", subtitle: "For a game and Playport's JIT memory together",
-                        value: reading.effectiveMB.map { ByteCount.format(mb: $0) } ?? "Not reported")
-        SettingsInfoRow(id: "setup:iml", title: "Increased Memory Limit",
-                        subtitle: reading.entitled == false ? "This copy was signed without it" : nil,
-                        value: reading.entitled.map { $0 ? "On" : "Off" } ?? "Unknown")
-        SettingsInfoRow(id: "setup:pool", title: "JIT memory", value: ByteCount.format(mb: MemoryLimit.poolMB(reading)))
+        SettingsInfoRow(id: "setup:memory", title: "内存上限", subtitle: "由游戏本体与 Playport JIT 内存共同使用",
+                        value: reading.effectiveMB.map { ByteCount.format(mb: $0) } ?? "未报告")
+        SettingsInfoRow(id: "setup:iml", title: "增加内存限制",
+                        subtitle: reading.entitled == false ? "当前安装包的签名未包含此权限" : nil,
+                        value: reading.entitled.map { $0 ? "已开启" : "未开启" } ?? "未知")
+        SettingsInfoRow(id: "setup:pool", title: "JIT 内存", value: ByteCount.format(mb: MemoryLimit.poolMB(reading)))
         #if !PLAYPORT_RELEASE
         if reading.simulatedMB != nil {
-            SettingsInfoRow(id: "setup:realLimit", title: "Real limit",
-                            value: reading.limitMB.map { ByteCount.format(mb: $0) } ?? "Not reported")
+            SettingsInfoRow(id: "setup:realLimit", title: "实际内存上限",
+                            value: reading.limitMB.map { ByteCount.format(mb: $0) } ?? "未报告")
         }
-        SettingsInfoRow(id: "setup:footprint", title: "In use now", value: ByteCount.format(mb: reading.footprintMB))
-        SettingsInfoRow(id: "setup:phone", title: "Phone", value: ByteCount.format(mb: reading.physicalMB))
+        SettingsInfoRow(id: "setup:footprint", title: "当前已用内存", value: ByteCount.format(mb: reading.footprintMB))
+        SettingsInfoRow(id: "setup:phone", title: "本机物理内存", value: ByteCount.format(mb: reading.physicalMB))
         #endif
         SettingsNote(text: reading.entitled == false ? MemoryNote.notEntitled + " " + MemoryNote.footer : MemoryNote.footer)
     }

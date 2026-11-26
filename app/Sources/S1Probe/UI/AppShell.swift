@@ -124,8 +124,8 @@ struct AppShell: View {
                 guard case let .success(url) = result else { return }
                 Task {
                     if let refusal = await GameImports.shared.picked(url) {
-                        PadModal.shared.picker(title: "Can't import \(url.lastPathComponent)", note: refusal,
-                                               options: [PadOption(id: "ok", label: "OK")], selected: "ok") { _ in }
+                        PadModal.shared.picker(title: "无法导入 \(url.lastPathComponent)", note: refusal,
+                                               options: [PadOption(id: "ok", label: "好")], selected: "ok") { _ in }
                     }
                 }
             } else {
@@ -235,25 +235,25 @@ struct AppShell: View {
         if nav.page == .downloads {
             h += DownloadsPage.hints(model.installs, focused: focus.focused)
             // Main sections switch with LB/RB; B never leaves this page.
-            return h + [PadHint(button: .menu, label: "Settings") { _ = nav.open("settings") }]
+            return h + [PadHint(button: .menu, label: "设置") { _ = nav.open("settings") }]
         }
         if !nav.settings, nav.page == .library {
             let grid = LibraryGrid.shared
-            h.append(PadHint(button: .lt, label: "Store", action: { grid.step(1) }, also: .rt))
-            h.append(PadHint(button: .view, label: "Filter & sort") { grid.openFilterSort() })
-            h.append(PadHint(button: .y, label: "Search") { grid.openSearch() })
+            h.append(PadHint(button: .lt, label: "商店", action: { grid.step(1) }, also: .rt))
+            h.append(PadHint(button: .view, label: "筛选与排序") { grid.openFilterSort() })
+            h.append(PadHint(button: .y, label: "搜索") { grid.openSearch() })
             // Add a game (UI/Import.swift): on every filter, not only at the grid's end.
-            h.append(PadHint(button: .x, label: "Add a game") { GameImports.requests.send() })
+            h.append(PadHint(button: .x, label: "导入本地游戏") { GameImports.requests.send() })
             if !grid.search.isEmpty {
-                h.append(PadHint(button: .b, label: "Clear search") { grid.clearSearch() })
-                return h + [PadHint(button: .menu, label: "Settings") { _ = nav.open("settings") }]
+                h.append(PadHint(button: .b, label: "清除搜索") { grid.clearSearch() })
+                return h + [PadHint(button: .menu, label: "设置") { _ = nav.open("settings") }]
             }
         }
         if nav.canGoBack {
-            h.append(PadHint(button: .b, label: "Back") { _ = nav.back() })
+            h.append(PadHint(button: .b, label: "返回") { _ = nav.back() })
         }
         if !nav.settings {
-            h.append(PadHint(button: .menu, label: "Settings") { _ = nav.open("settings") })
+            h.append(PadHint(button: .menu, label: "设置") { _ = nav.open("settings") })
         }
         return h
     }
@@ -268,16 +268,16 @@ struct AppShell: View {
         }
         switch nav.gamePanels.last {
         case .options?:
-            if focus.canReset { h.append(PadHint(button: .y, label: "Back to default") { focus.resetFocused() }) }
-            h.append(PadHint(button: .b, label: "Close") { _ = nav.back() })
+            if focus.canReset { h.append(PadHint(button: .y, label: "恢复默认") { focus.resetFocused() }) }
+            h.append(PadHint(button: .b, label: "关闭") { _ = nav.back() })
         case .achievements?:
-            h.append(PadHint(button: .b, label: nav.gamePanels.count > 1 ? "Game options" : "Close") { _ = nav.back() })
+            h.append(PadHint(button: .b, label: nav.gamePanels.count > 1 ? "游戏选项" : "关闭") { _ = nav.back() })
         case .controller?:
             return ControllerMapRing.hints
         case .gyro?:
             // "Back", not "Game options": three hints must fit beside the test area.
-            if focus.canReset { h.append(PadHint(button: .y, label: "Back to default") { focus.resetFocused() }) }
-            h.append(PadHint(button: .b, label: "Back") { _ = nav.back() })
+            if focus.canReset { h.append(PadHint(button: .y, label: "恢复默认") { focus.resetFocused() }) }
+            h.append(PadHint(button: .b, label: "返回") { _ = nav.back() })
         case nil:
             if let x = gamePage.x { h.append(PadHint(button: .x, label: x.label, action: x.action)) }
             h.append(PadHint(button: .b, label: nav.gameBackLabel) { _ = nav.back() })
@@ -389,13 +389,13 @@ private struct TopBar: View {
             }
             .buttonStyle(.plain)
             .padding(.leading, 3)
-            .accessibilityLabel("Settings")
+            .accessibilityLabel("设置")
         }
         .frame(height: 48)
     }
 
     private var controllerText: String {
-        guard let c = router.controller else { return "No controller" }
+        guard let c = router.controller else { return "未连接手柄" }
         guard let b = c.battery else { return c.name }
         return "\(c.name) \(b)%" + (c.charging ? " ⚡︎" : "")
     }

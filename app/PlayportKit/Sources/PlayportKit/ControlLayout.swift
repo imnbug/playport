@@ -340,22 +340,22 @@ public struct ControlLayout: Codable, Equatable, Sendable {
         ]
         if dpad == .on {
             controls.append(Control(id: "dpad", kind: .dpad, actions: [.pad(.up), .pad(.down), .pad(.left), .pad(.right)],
-                                    label: "D-pad", anchor: .bottomLeading, x: middle, y: -(zoneHeight + gap + cluster / 2),
+                                    label: "十字键", anchor: .bottomLeading, x: middle, y: -(zoneHeight + gap + cluster / 2),
                                     width: cluster, height: cluster))
         }
-        controls.append(Control(id: "leftStick", kind: .stick, actions: [.pad(.leftStick)], label: "Left stick",
+        controls.append(Control(id: "leftStick", kind: .stick, actions: [.pad(.leftStick)], label: "左摇杆",
                                 anchor: .bottomLeading, x: middle, y: -zoneHeight / 2, width: 104, height: 104,
                                 floatingZone: ControlZone(anchor: .bottomLeading, width: zoneWidth, height: zoneHeight)))
         switch rightStick {
         case .off:
             break
         case .below:
-            controls.append(Control(id: "rightStick", kind: .stick, actions: [.pad(.rightStick)], label: "Right stick",
+            controls.append(Control(id: "rightStick", kind: .stick, actions: [.pad(.rightStick)], label: "右摇杆",
                                     anchor: .bottomTrailing, x: -middle, y: -zoneHeight / 2, width: 104, height: 104,
                                     floatingZone: ControlZone(anchor: .bottomTrailing, width: zoneWidth, height: zoneHeight)))
         case .above:
             let lift = cluster + gap
-            controls.append(Control(id: "rightStick", kind: .stick, actions: [.pad(.rightStick)], label: "Right stick",
+            controls.append(Control(id: "rightStick", kind: .stick, actions: [.pad(.rightStick)], label: "右摇杆",
                                     anchor: .bottomTrailing, x: -middle, y: -(lift + aboveZoneHeight / 2), width: 104, height: 104,
                                     floatingZone: ControlZone(anchor: .bottomTrailing, y: -lift, width: zoneWidth,
                                                               height: aboveZoneHeight)))
@@ -388,7 +388,7 @@ public struct ControlLayout: Codable, Equatable, Sendable {
     public static func keyboardMouse() -> ControlLayout {
         let zoneWidth = 210.0, zoneHeight = 126.0
         var controls = [
-            Control(id: "look", kind: .lookArea, actions: [.mouse(.move)], label: "Look", anchor: .center, x: 0, y: 0,
+            Control(id: "look", kind: .lookArea, actions: [.mouse(.move)], label: "视角", anchor: .center, x: 0, y: 0,
                     width: wholeArea, height: wholeArea),
             Control(id: "esc", actions: [.key(0x1B, [])], label: "Esc", anchor: .topLeading, x: 30, y: 22, width: 52, height: 30),
             Control(id: "tab", actions: [.key(0x09, [])], label: "Tab", anchor: .topLeading, x: 88, y: 22, width: 52, height: 30),
@@ -403,11 +403,11 @@ public struct ControlLayout: Codable, Equatable, Sendable {
             Control(id: "move", kind: .stick, actions: [.key(0x57, []), .key(0x53, []), .key(0x41, []), .key(0x44, [])],
                     label: "WASD", anchor: .bottomLeading, x: zoneWidth / 2, y: -zoneHeight / 2, width: 104, height: 104,
                     floatingZone: ControlZone(anchor: .bottomLeading, width: zoneWidth, height: zoneHeight)),
-            Control(id: "use", actions: [.key(0x45, [])], label: "Use", anchor: .bottomTrailing, x: -150, y: -83, width: 50, height: 50),
-            Control(id: "reload", actions: [.key(0x52, [])], label: "Reload", anchor: .bottomTrailing, x: -126, y: -137,
+            Control(id: "use", actions: [.key(0x45, [])], label: "使用", anchor: .bottomTrailing, x: -150, y: -83, width: 50, height: 50),
+            Control(id: "reload", actions: [.key(0x52, [])], label: "换弹", anchor: .bottomTrailing, x: -126, y: -137,
                     width: 46, height: 46),
-            Control(id: "jump", actions: [.key(0x20, [])], label: "Jump", anchor: .bottomTrailing, x: -71, y: -166, width: 56, height: 56),
-            Control(id: "fire", actions: [.mouse(.left)], label: "Fire", anchor: .bottomTrailing, x: -58, y: -75, width: 76, height: 76),
+            Control(id: "jump", actions: [.key(0x20, [])], label: "跳跃", anchor: .bottomTrailing, x: -71, y: -166, width: 56, height: 56),
+            Control(id: "fire", actions: [.mouse(.left)], label: "开火", anchor: .bottomTrailing, x: -58, y: -75, width: 76, height: 76),
         ]
         return ControlLayout(controls: controls)
     }
@@ -423,14 +423,14 @@ public struct ControlLayout: Codable, Equatable, Sendable {
                     y: Double(i - 2) * step, width: side, height: side, tool: tool)
         }
         return ControlLayout(controls: [
-            Control(id: "pointer", kind: .pointer, actions: [.mouse(.left)], label: "Pointer", anchor: .center, x: 0, y: 0,
+            Control(id: "pointer", kind: .pointer, actions: [.mouse(.left)], label: "指针", anchor: .center, x: 0, y: 0,
                     width: wholeArea, height: wholeArea),
-            Control(id: "mode", kind: .tool, actions: [], label: "Trackpad", anchor: .topTrailing, x: -105, y: 22,
+            Control(id: "mode", kind: .tool, actions: [], label: "触控板", anchor: .topTrailing, x: -105, y: 22,
                     width: 210, height: 32, tool: .trackpad),
-            bar(0, "rightClick", "Right", tool: .rightClick),
-            bar(1, "hover", "Hover", tool: .hover),
-            bar(2, "scroll", "Scroll", tool: .scroll),
-            bar(3, "keyboard", "Keys", actions: [.playport(.keyboard)]),
+            bar(0, "rightClick", "右键", tool: .rightClick),
+            bar(1, "hover", "悬停", tool: .hover),
+            bar(2, "scroll", "滚轮", tool: .scroll),
+            bar(3, "keyboard", "键盘", actions: [.playport(.keyboard)]),
             bar(4, "esc", "Esc", actions: [.key(0x1B, [])]),
         ])
     }

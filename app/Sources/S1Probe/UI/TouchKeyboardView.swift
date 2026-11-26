@@ -85,7 +85,7 @@ final class TouchKeyboardPanelView: UIView {
         // The close key: a chip at its target's place.
         let c = Self.rect(k.close.frame).insetBy(dx: 0, dy: 2)
         close.frame = c
-        close.text = "✕ Close"
+        close.text = "✕ 关闭"
         close.textAlignment = .center
         close.font = .systemFont(ofSize: 11, weight: .semibold)
         close.layer.cornerRadius = c.height / 2

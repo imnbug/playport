@@ -103,19 +103,18 @@ public enum BattleNetPlay {
             return .checkUpdate(product)
         case let .available(version, bytes):
             if let free = facts.freeBytes, let why = BattleNet.refusal(needed: BattleNet.spaceNeeded(update: bytes), free: free) {
-                return .refuse("\(product.name) \(version) is out, and its update does not fit. \(why)")
+                return .refuse("\(product.name) \(version) 已发布，但存储空间不足以安装更新。\(why)")
             }
             return .update(product, version: version)
         case let .unreachable(why):
             guard t.executableMachine == x64Machine else {
-                return .refuse("\(product.name) starts only from its x64 client, which must be downloaded first, and Blizzard's "
-                               + "servers couldn't be reached: \(why)")
+                return .refuse("\(product.name) 只能通过 64 位客户端启动，需要先下载该客户端，但无法连接暴雪服务器：\(why)")
             }
-            report = "Couldn't check for an update: \(why) \(product.name) starts the installed version."
+            report = "无法检查更新：\(why) \(product.name) 将启动当前已安装的版本。"
         case .current, .updated:
             guard t.executableMachine == x64Machine else {
-                return .refuse("\(product.name) starts only from its x64 client, and \(t.executable ?? "no client") is not it. "
-                               + "Check for update on the game's page downloads it.")
+                return .refuse("\(product.name) 只能通过 64 位客户端启动，而当前可执行文件（\(t.executable ?? "无客户端")）不是 64 位版本。"
+                               + "请在游戏详情页点击「检查更新」以下载该客户端。")
             }
         }
         return .launch(Launch(graphics: .vulkan, arguments: ["-d3d12"], report: report))
@@ -128,10 +127,9 @@ public enum BattleNetPlay {
     /// the game's files and code says what decision 0177 does: Blizzard's x64 client runs through FEX,
     /// unchanged on disk and in memory.
     public static func notice(_ product: BattleNetProduct) -> (title: String, text: String) {
-        ("Before you play \(product.name)",
-         "Blizzard does not support Playport. Blizzard may take action against your Battle.net account for playing "
-         + "\(product.name) here, up to a suspension or a ban. Playport changes none of the game's files and none of its "
-         + "code in memory: it runs Blizzard's x64 Windows client through an x86-64 translator (FEX), as Windows on ARM "
-         + "PCs do. You sign in inside \(product.name) itself: Playport stores no Battle.net email, password or session.")
+        ("游玩 \(product.name) 前请注意",
+         "暴雪官方不支持 Playport。在此游玩 \(product.name) 可能导致暴雪对你的 Battle.net 账号采取封禁或冻结等处罚措施。"
+         + "Playport 不会修改任何游戏文件或内存中的代码：它与 Windows on ARM 电脑一样，仅通过 x86-64 转译器（FEX）运行暴雪原版 x64 Windows 客户端。"
+         + "你需要在 \(product.name) 游戏内自行登录：Playport 不会保存任何 Battle.net 邮箱、密码或登录会话。")
     }
 }

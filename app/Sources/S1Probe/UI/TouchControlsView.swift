@@ -229,7 +229,7 @@ final class OnScreenControls: ObservableObject {
         }
         if drawNow, !drawn, s.visible, defaults.show == .automatic, !UserDefaults.standard.bool(forKey: Self.toastKey) {
             UserDefaults.standard.set(true, forKey: Self.toastKey)
-            view?.showToast("Tap with three fingers for the menu. The controls hide when a controller connects.")
+            view?.showToast("三指轻点可打开菜单。连接手柄后触控按键会自动隐藏。")
         }
         state = s
         drawn = drawNow
@@ -909,7 +909,7 @@ final class ControlView: UIView {
         case .lookArea:
             // The board's "drag anywhere free to look", in the free space left of Jump and above Reload.
             let hint = UILabel()
-            hint.attributedText = NSAttributedString(string: "DRAG ANYWHERE FREE TO LOOK", attributes: [
+            hint.attributedText = NSAttributedString(string: "在空白处拖动以转动视角", attributes: [
                 .font: UIFont.systemFont(ofSize: 9.5, weight: .semibold), .kern: 0.85, .foregroundColor: Glass.caption,
             ])
             hint.numberOfLines = 2
@@ -992,7 +992,7 @@ private final class ToolFace: UIView {
             layer.borderWidth = 1
             layer.borderColor = Glass.edge.withAlphaComponent(0.2).cgColor
             let inner = bounds.insetBy(dx: 3, dy: 3), w = (inner.width - 2) / 2
-            for (i, title) in ["Tap to click", "Trackpad"].enumerated() {
+            for (i, title) in ["点按即点", "触控板"].enumerated() {
                 let s = UILabel(frame: CGRect(x: inner.minX + CGFloat(i) * (w + 2), y: inner.minY, width: w, height: inner.height))
                 s.text = title
                 s.textAlignment = .center
@@ -1075,7 +1075,7 @@ private final class GyroChipView: UIView {
         backgroundColor = Glass.fill
         layer.borderWidth = 1
         layer.borderColor = Glass.amberEdge.cgColor
-        label.text = "Gyro aim"
+        label.text = "陀螺仪瞄准"
         label.font = .systemFont(ofSize: 11, weight: .semibold)
         label.textColor = Glass.amber
         label.textAlignment = .center

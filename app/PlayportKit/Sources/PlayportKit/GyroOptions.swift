@@ -24,16 +24,16 @@ public enum GyroRow: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .output: "Gyro aim"
-        case .source: "Gyro from"
-        case .pauseButton: "Pause button"
-        case .sensitivity: "Sensitivity"
-        case .antiDeadZone: "Anti-dead zone"
-        case .smoothing: "Smoothing"
-        case .verticalRatio: "Up and down"
-        case .turnAxis: "Turn with"
-        case .invertX: "Invert left and right"
-        case .invertY: "Invert up and down"
+        case .output: "陀螺仪瞄准"
+        case .source: "陀螺仪来源"
+        case .pauseButton: "暂停按键"
+        case .sensitivity: "灵敏度"
+        case .antiDeadZone: "反死区"
+        case .smoothing: "平滑度"
+        case .verticalRatio: "上下灵敏度"
+        case .turnAxis: "转向方式"
+        case .invertX: "反转左右方向"
+        case .invertY: "反转上下方向"
         }
     }
 
@@ -73,7 +73,7 @@ public enum GyroRow: String, CaseIterable, Sendable {
         case .smoothing: GyroSmoothingChoice.allCases.map { ($0.rawValue, GyroText.smoothing($0)) }
         case .verticalRatio: GyroSteps.verticalRatio.map { (String($0), GyroText.verticalRatio($0)) }
         case .turnAxis: GyroTurnAxis.allCases.map { ($0.rawValue, GyroText.turnAxis($0)) }
-        case .invertX, .invertY: [("false", "Off"), ("true", "On")]
+        case .invertX, .invertY: [("false", "关闭"), ("true", "开启")]
         }
     }
 
@@ -114,8 +114,8 @@ public enum GyroRow: String, CaseIterable, Sendable {
         case .smoothing: GyroText.smoothing(s.smoothing)
         case .verticalRatio: GyroText.verticalRatio(s.verticalRatio)
         case .turnAxis: GyroText.turnAxis(s.turnAxis)
-        case .invertX: s.invertX ? "On" : "Off"
-        case .invertY: s.invertY ? "On" : "Off"
+        case .invertX: s.invertX ? "开启" : "关闭"
+        case .invertY: s.invertY ? "开启" : "关闭"
         }
     }
 
@@ -196,36 +196,36 @@ public enum GyroSteps {
 public enum GyroText {
     public static func output(_ o: GyroOutput) -> String {
         switch o {
-        case .off: "Off"
-        case .mouse: "Mouse"
-        case .rightStick: "Right stick"
+        case .off: "关闭"
+        case .mouse: "鼠标"
+        case .rightStick: "右摇杆"
         }
     }
 
     public static func source(_ s: GyroSource) -> String {
         switch s {
-        case .auto: "Auto"
+        case .auto: "自动"
         case .phone: "iPhone"
-        case .controller: "Controller"
+        case .controller: "手柄"
         }
     }
 
     public static func device(_ d: GyroDevice) -> String {
         switch d {
         case .phone: "iPhone"
-        case .controller: "Controller"
+        case .controller: "手柄"
         }
     }
 
     public static func turnAxis(_ t: GyroTurnAxis) -> String {
         switch t {
-        case .playerSpace: "Player space"
-        case .yaw: "Yaw"
-        case .roll: "Roll"
+        case .playerSpace: "玩家空间"
+        case .yaw: "偏航"
+        case .roll: "翻滚"
         }
     }
 
-    public static func pauseButton(_ b: GyroPauseButton) -> String { b.control.map(ActionText.pad) ?? "None" }
+    public static func pauseButton(_ b: GyroPauseButton) -> String { b.control.map(ActionText.pad) ?? "无" }
 
     /// `2.0×`; two places when one would round it (`0.25×`).
     public static func sensitivity(_ v: Double) -> String {
@@ -235,12 +235,12 @@ public enum GyroText {
 
     /// `27%`, `None` for 0.
     public static func antiDeadZone(_ v: Double) -> String {
-        v <= 0 ? "None" : String(format: "%.0f%%", v * 100)
+        v <= 0 ? "无" : String(format: "%.0f%%", v * 100)
     }
 
     public static func smoothing(_ c: GyroSmoothingChoice) -> String {
         switch c {
-        case .auto: "Auto"
+        case .auto: "自动"
         case .off: smoothing(GyroSmoothing.off)
         case .light: smoothing(GyroSmoothing.light)
         case .normal: smoothing(GyroSmoothing.normal)
@@ -249,9 +249,9 @@ public enum GyroText {
 
     public static func smoothing(_ l: GyroSmoothing) -> String {
         switch l {
-        case .off: "Off"
-        case .light: "Light"
-        case .normal: "Normal"
+        case .off: "关闭"
+        case .light: "轻度"
+        case .normal: "标准"
         }
     }
 
@@ -259,26 +259,26 @@ public enum GyroText {
     /// alone when no gyro can be read now.
     public static func smoothingInUse(_ c: GyroSmoothingChoice, device: GyroDevice?) -> String {
         guard c == .auto, let device else { return smoothing(c) }
-        return "Auto · " + smoothing(c.smoothing(for: device))
+        return "自动 · " + smoothing(c.smoothing(for: device))
     }
 
     /// `0.8× of across`.
-    public static func verticalRatio(_ v: Double) -> String { sensitivity(v) + " of across" }
+    public static func verticalRatio(_ v: Double) -> String { "水平的 " + sensitivity(v) }
 
     /// The in-game menu's and Game options' short value: `Mouse · 2.0×`, `Off`.
     public static func summary(_ s: GyroSettings) -> String {
-        s.output == .off ? "Off" : "\(output(s.output)) · \(sensitivity(s.sensitivity))"
+        s.output == .off ? "关闭" : "\(output(s.output)) · \(sensitivity(s.sensitivity))"
     }
 
     /// The source row's value and, when no gyro can be read, why: `Auto · iPhone`,
     /// `Controller · none` ("No controller with a gyro is connected"). `device` is the gyro the choice reads now.
     public static func sourceInUse(_ s: GyroSource, device: GyroDevice?) -> (value: String, why: String?) {
         switch (s, device) {
-        case (.auto, let d?): ("Auto · " + self.device(d), nil)
+        case (.auto, let d?): ("自动 · " + self.device(d), nil)
         case (_, _?): (source(s), nil)
-        case (.controller, nil): ("Controller · none", "No controller with a gyro is connected")
-        case (.phone, nil): ("iPhone · none", "This iPhone reports no gyro")
-        case (.auto, nil): ("Auto · none", "No gyro on this iPhone or a connected controller")
+        case (.controller, nil): ("手柄 · 无", "未连接带陀螺仪的手柄")
+        case (.phone, nil): ("iPhone · 无", "此 iPhone 未提供陀螺仪数据")
+        case (.auto, nil): ("自动 · 无", "此 iPhone 及已连接的手柄均无陀螺仪")
         }
     }
 }

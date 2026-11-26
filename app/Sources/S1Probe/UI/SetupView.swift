@@ -245,8 +245,8 @@ struct SetupView: View {
         let f = state.shown
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Let's get you playing").font(PP.display(30))
-                Text("A few steps, once. Playport checks them again by itself before every game.")
+                Text("准备开始畅玩").font(PP.display(30))
+                Text("只需简单几步，一次搞定。之后每次启动游戏前 Playport 都会自动检查。")
                     .font(.system(size: 13)).foregroundStyle(PP.muted)
                 if let m = state.message {
                     Text(m).font(.system(size: 13, weight: .semibold)).foregroundStyle(PP.accent)
@@ -311,7 +311,7 @@ struct SetupView: View {
         .padding(16)
         .frame(maxWidth: .infinity, minHeight: 190, maxHeight: .infinity, alignment: .topLeading)
         .background(PP.surface, in: RoundedRectangle(cornerRadius: 14))
-        .padItem(item.step.item, hint: item.action == nil ? "" : "Do this step", cornerRadius: 14) { run(item) }
+        .padItem(item.step.item, hint: item.action == nil ? "" : "执行此步骤", cornerRadius: 14) { run(item) }
     }
 
     private func run(_ item: SetupItem) {
@@ -340,10 +340,10 @@ struct SetupView: View {
         case .steam:
             // Which store: Steam's own sign-in screen, or GOG's or Epic's page in a sheet.
             PadModal.shared.picker(
-                title: "Sign in", context: "Accounts", note: "One is enough, and you can add the others later in Settings › Accounts.",
-                options: [PadOption(id: "steam", label: "Steam", detail: SteamAccountModel.current?.state.account == nil ? nil : "Signed in"),
-                          PadOption(id: "gog", label: "GOG", detail: GOGAccount.shared.state == .signedIn ? "Signed in" : nil),
-                          PadOption(id: "epic", label: "Epic Games", detail: EpicAccount.shared.state == .signedIn ? "Signed in" : nil)],
+                title: "登录账号", context: "账号", note: "登录任意一个平台即可，你随时可在「设置 › 账号」中添加其他账号。",
+                options: [PadOption(id: "steam", label: "Steam", detail: SteamAccountModel.current?.state.account == nil ? nil : "已登录"),
+                          PadOption(id: "gog", label: "GOG", detail: GOGAccount.shared.state == .signedIn ? "已登录" : nil),
+                          PadOption(id: "epic", label: "Epic Games", detail: EpicAccount.shared.state == .signedIn ? "已登录" : nil)],
                 selected: "steam") { picked in
                 switch picked {
                 case "gog": GOGAccount.shared.signingIn = true
@@ -360,18 +360,18 @@ struct SetupView: View {
         var h: [PadHint] = []
         let focus = PadFocus.shared
         if let a = focus.hint, !a.isEmpty { h.append(PadHint(button: .a, label: a) { focus.activate() }) }
-        h.append(PadHint(button: .rb, label: "Next") { _ = SetupRing.press(.rb) })
-        if !SetupState.shared.shown.pairsOnPhone { h.append(PadHint(button: .y, label: "How to make the file") { SetupRing.howTo() }) }
+        h.append(PadHint(button: .rb, label: "下一步") { _ = SetupRing.press(.rb) })
+        if !SetupState.shared.shown.pairsOnPhone { h.append(PadHint(button: .y, label: "如何生成配对文件") { SetupRing.howTo() }) }
         let state = SetupState.shared
         // X on the first step: JIT from StikDebug or another app (LiveContainer) instead.
         if focus.focused == SetupStep.pairing.item, state.preview == nil {
-            h.append(PadHint(button: .x, label: "JIT method") { JitMethodPicker.show() })
+            h.append(PadHint(button: .x, label: "JIT 方式") { JitMethodPicker.show() })
         }
         if let step = SetupRing.ringed, SetupChecklist.offersNotNow(step, state.shown, firstRun: state.inFirstRun) {
-            h.append(PadHint(button: .x, label: "Not now") { state.skip(step) })
+            h.append(PadHint(button: .x, label: "暂不设置") { state.skip(step) })
         }
         if state.canLeave {
-            h.append(PadHint(button: .b, label: SetupChecklist.complete(state.shown) ? "Done" : "Back") {
+            h.append(PadHint(button: .b, label: SetupChecklist.complete(state.shown) ? "完成" : "返回") {
                 _ = AppNavigation.shared.back()
             })
         }
@@ -380,8 +380,8 @@ struct SetupView: View {
 
     /// The footer's grey note at the left.
     static var footerNote: String {
-        if SetupState.shared.preview != nil { return "Preview: A completes a step; nothing changes on the phone" }
-        return SetupState.shared.shown.pairsOnPhone ? "Pairing asks for your approval in iOS Settings" : "Choosing a file uses touch"
+        if SetupState.shared.preview != nil { return "预览模式：按 A 完成模拟步骤，不会改动手机实际设置" }
+        return SetupState.shared.shown.pairsOnPhone ? "设备配对需要前往 iOS「设置」予以批准" : "选择文件需要使用触屏操作"
     }
 }
 
@@ -418,23 +418,23 @@ enum SetupRing {
     /// Y: how a pairing file is made, for a phone that cannot pair with itself.
     static func howTo() {
         PadModal.shared.picker(
-            title: "Making a pairing file",
-            note: "A pairing file comes from a computer the iPhone trusts: connect it by cable, "
-                + "tap Trust on the iPhone, and make an RP pairing file with a pairing tool there. "
-                + "Send the file to the iPhone (AirDrop or Files), then choose it here. "
-                + "Keep it private: it lets that computer debug this iPhone.",
-            options: [PadOption(id: "ok", label: "OK")], selected: "ok") { _ in }
+            title: "如何生成配对文件",
+            note: "配对文件需要在受此 iPhone 信任的电脑上生成：请用数据线连接电脑，"
+                + "在 iPhone 上轻点「信任」，然后使用电脑端的配对工具生成 RP 配对文件。"
+                + "通过 AirDrop 或「文件」将该文件发送到 iPhone，再在此处选择导入。"
+                + "请妥善保管该文件，切勿外泄：持有它的电脑可调试此 iPhone。",
+            options: [PadOption(id: "ok", label: "知道了")], selected: "ok") { _ in }
     }
 
     /// A on Memory: how to get a copy signed with Increased Memory Limit
     /// (README "Install", docs/DISTRIBUTION.md section 6).
     static func memoryHowTo() {
         PadModal.shared.picker(
-            title: "Increased Memory Limit",
-            note: "Your sideloader decides it: the capability must be turned on for Playport's App ID. "
-                + "AltStore Classic 2.2 or later, Impactor and Xcode keep it. SideStore does not turn it on for a free "
-                + "Apple ID: run GetMoreRam once with the same Apple ID, turn Increased Memory Limit on for "
-                + "Playport's App ID, then reinstall Playport from SideStore. Then this step shows a tick.",
-            options: [PadOption(id: "ok", label: "OK")], selected: "ok") { _ in }
+            title: "增加内存限制",
+            note: "此权限取决于你使用的侧载签名工具：必须为 Playport 的 App ID 开启该权限（Increased Memory Limit）。"
+                + "AltStore Classic 2.2 及以上版本、Impactor 与 Xcode 会默认保留该权限。SideStore 在使用免费 Apple ID 时不会自动开启它："
+                + "请使用同一个 Apple ID 运行一次 GetMoreRam，为 Playport 的 App ID 开启「增加内存限制」，"
+                + "然后在 SideStore 中重新安装 Playport。完成后此步骤即会显示绿色对勾。",
+            options: [PadOption(id: "ok", label: "知道了")], selected: "ok") { _ in }
     }
 }

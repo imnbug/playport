@@ -64,7 +64,7 @@ struct LaunchScreen: View {
                     if slow, case .waitingForJit(let until) = launch.step {
                         LaunchSteps(current: .jit, failed: nil, dependencies: launch.installsDependencies) {
                             VStack(alignment: .leading, spacing: 3) {
-                                Text("Gives up in \(max(0, Int(until.timeIntervalSince(ctx.date)))) s").monospacedDigit()
+                                Text("将在 \(max(0, Int(until.timeIntervalSince(ctx.date)))) 秒后停止等待").monospacedDigit()
                                 Text(LaunchFix.slowJit(tunnelUp: LocalDevVPN.tunnelUp))
                             }
                         }
@@ -107,7 +107,7 @@ enum LaunchFix {
     static func slowJit(tunnelUp: Bool, method: JitMethod = JitProvider.method) -> String {
         if method == .external { return JitNote.waitingForAnotherApp }
         if !tunnelUp {
-            return "LocalDevVPN is not connected. Open LocalDevVPN and connect it: the launch goes on once JIT arrives."
+            return "LocalDevVPN 未连接。请打开 LocalDevVPN 并连接：JIT 就绪后启动流程会自动继续。"
         }
         return method == .stikDebug ? JitNote.waitingForStikDebug : JitNote.waiting
     }
@@ -118,14 +118,14 @@ enum LaunchFix {
             if method == .external {
                 method.debuggerFailureMessage(detached: false, inLiveContainer: JitProvider.inLiveContainer)
             } else if !tunnelUp {
-                "LocalDevVPN is not connected. Turn it on (Y), then try again."
+                "LocalDevVPN 未连接。请按 Y 开启它，然后重试。"
             } else if method == .stikDebug {
-                "JIT did not arrive. Check that StikDebug is installed and set up, then try again."
+                "未收到 JIT 响应。请检查 StikDebug 是否已安装并配置妥当，然后重试。"
             } else {
-                "JIT did not arrive. Keep Playport in front while the game starts, then try again."
+                "未收到 JIT 响应。请在游戏启动期间保持 Playport 在前台显示，然后重试。"
             }
-        case .runtime: "Try again. If it fails again, restart the iPhone."
-        case .prerequisites, .game, .drawing: "Try again. If it fails again, check the game's files in its options."
+        case .runtime: "请重试。若仍然失败，请重启此 iPhone。"
+        case .prerequisites, .game, .drawing: "请重试。若仍然失败，请在该游戏的「游戏选项」中校验游戏文件。"
         }
     }
 }
@@ -277,10 +277,10 @@ struct LaunchBar: View {
 struct LaunchTip: View {
     var body: some View {
         HStack(spacing: 6) {
-            Text("Tip: hold")
+            Text("提示：长按手柄上的")
             Text("⌂").font(.system(size: 11, weight: .bold)).foregroundStyle(PP.background)
                 .padding(.horizontal, 5).frame(minWidth: 20, minHeight: 20).background(PP.text, in: Capsule())
-            Text("on your controller for the Playport menu")
+            Text("键可呼出 Playport 菜单")
         }
         .font(.system(size: 13))
         .foregroundStyle(PP.muted)
@@ -400,9 +400,9 @@ struct LaunchFailureView: View {
                 Spacer()
                 HStack(spacing: 18) {
                     Spacer()
-                    if m.titleID != nil { PadModalHint(button: .a, label: "Try again") { session.press(.a) } }
-                    if session.offersVPN { PadModalHint(button: .y, label: "Turn on LocalDevVPN") { session.press(.y) } }
-                    PadModalHint(button: .b, label: "Back") { session.press(.b) }
+                    if m.titleID != nil { PadModalHint(button: .a, label: "重试") { session.press(.a) } }
+                    if session.offersVPN { PadModalHint(button: .y, label: "开启 LocalDevVPN") { session.press(.y) } }
+                    PadModalHint(button: .b, label: "返回") { session.press(.b) }
                 }
                 .padding(.horizontal, 36)
                 .frame(height: 36)
@@ -458,33 +458,33 @@ struct LaunchMessage: Codable, Equatable, Identifiable {
             return nil
         case .exited(let code):
             #if PLAYPORT_RELEASE
-            return .init(title: "\(title) stopped unexpectedly", text: "The game ended with an error.")
+            return .init(title: "\(title) 意外退出", text: "游戏因发生错误而结束。")
             #else
-            return .init(title: "\(title) stopped unexpectedly", text: "It exited with code \(String(format: "0x%08X", code)).")
+            return .init(title: "\(title) 意外退出", text: "游戏已退出，退出码 \(String(format: "0x%08X", code))。")
             #endif
         case .refused where SelfCheck.failure(in: line) != nil, .failed where SelfCheck.failure(in: line) != nil:
-            return .init(title: "\(title) could not start", text: SelfCheck.explanation(SelfCheck.failure(in: line)!))
+            return .init(title: "\(title) 无法启动", text: SelfCheck.explanation(SelfCheck.failure(in: line)!))
         case .refused where sessionFull(line):
-            return .init(title: "Playport needs to restart",
-                         text: "Playport could not restart itself after the last game. Close it and reopen it from the Home Screen to play \(title).")
+            return .init(title: "Playport 需要重新启动",
+                         text: "上一次游戏结束后 Playport 未能自动重启。请关闭应用并从主屏幕重新打开以游玩 \(title)。")
         case .refused where line.contains(" graphics="):
-            return .init(title: "\(title) could not start",
-                         text: "This build of Playport does not include the Direct3D backend the game is set to. "
-                            + "Pick another under Graphics on its page or in Settings.")
+            return .init(title: "\(title) 无法启动",
+                         text: "当前版本的 Playport 未包含此游戏所选的 Direct3D 后端。"
+                            + "请在该游戏详情页或全局「设置 › 画面」中切换其他后端。")
         case .refused:
-            return .init(title: "\(title) could not be found",
-                         text: "Its executable is not where the library expects it. Pull down on the library to look again.")
+            return .init(title: "找不到 \(title)",
+                         text: "在预期路径下未找到游戏可执行文件。请在游戏库页面下拉刷新重试。")
         case .prerequisitesRan:
             // The same Play goes on after the restart (decision 0084): nothing to say.
             return nil
         case .outOfJitMemory(let part):
-            return .init(title: "\(title) ran out of JIT memory",
+            return .init(title: "\(title) 的 JIT 内存已耗尽",
                          text: JitNote.outOfMemory(part, poolMB: outcome.poolMB))
         case .outOfEmulatorMemory:
-            return .init(title: "\(title) ran out of emulator memory",
+            return .init(title: "\(title) 的模拟器内存已耗尽",
                          text: JitNote.outOfEmulatorMemory)
         case .failed:
-            return .init(title: "\(title) could not start", text: failedText(line, spent: spent))
+            return .init(title: "\(title) 无法启动", text: failedText(line, spent: spent))
         }
     }
 
@@ -498,16 +498,16 @@ struct LaunchMessage: Codable, Equatable, Identifiable {
             if JitMethod.debuggerFailure(in: String(why)) != nil { return String(why) }
             #if PLAYPORT_RELEASE
             // The helper's raw reason is in the log; the player gets what to do.
-            if why.contains("no pairing file") { return "Import a pairing file in Settings, then try again." }
-            return "JIT could not be set up. Check that LocalDevVPN is connected, then try again."
+            if why.contains("no pairing file") { return "请先在「设置」中导入配对文件，然后重试。" }
+            return "无法配置 JIT。请检查 LocalDevVPN 是否已连接，然后重试。"
             #else
             return why.hasPrefix("wine_host_jit_pool_acquire")
-                ? "JIT did not arrive in time (\(why)). Check that LocalDevVPN is connected, then try again."
-                : "JIT could not be requested: \(why)."
+                ? "JIT 等待超时（\(why)）。请检查 LocalDevVPN 是否已连接，然后重试。"
+                : "无法请求 JIT：\(why)。"
             #endif
         }
-        return spent ? "JIT was enabled, but the runtime or the game failed to start."
-                     : "The runtime or the game failed to start."
+        return spent ? "JIT 已启用，但运行时环境或游戏启动失败。"
+                     : "运行时环境或游戏启动失败。"
     }
 
     /// A Play in a process that already played its title (LaunchCoordinator:

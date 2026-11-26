@@ -122,7 +122,7 @@ final class BattleNetStore: ObservableObject, DownloadDriver {
             }
         }
         if let failure {
-            error = BattleNet.reason(failure).map { InstallCopy.detailed($0, failure) } ?? InstallCopy.detailed("The Battle.net store could not be read.", failure)
+            error = BattleNet.reason(failure).map { InstallCopy.detailed($0, failure) } ?? InstallCopy.detailed("无法读取 Battle.net 商店信息。", failure)
         } else {
             error = nil
         }
@@ -171,7 +171,7 @@ final class BattleNetStore: ObservableObject, DownloadDriver {
             }
             log.warn("battlenet", "\(p.code) \(r.rawValue): sizes failed: \(error)")
             guard region(p) == r else { return }
-            sizeErrors[p] = BattleNet.reason(error).map { InstallCopy.detailed($0, error) } ?? InstallCopy.detailed("The size could not be read.", error)
+            sizeErrors[p] = BattleNet.reason(error).map { InstallCopy.detailed($0, error) } ?? InstallCopy.detailed("无法读取游戏大小。", error)
         }
     }
 
@@ -186,8 +186,8 @@ final class BattleNetStore: ObservableObject, DownloadDriver {
 
     /// The region picker (PadModal), as the page's Region button opens it.
     func pickRegion(_ p: BattleNetProduct) {
-        PadModal.shared.picker(title: "Store region", context: p.name,
-                               note: "Your Battle.net account's region. The game signs in to it.",
+        PadModal.shared.picker(title: "商店地区", context: p.name,
+                               note: "你的 Battle.net 账号所属地区，游戏启动后将登录至该地区。",
                                options: StoreRegion.allCases.map { PadOption(id: $0.rawValue, label: Self.label($0)) },
                                selected: region(p).rawValue) { [weak self] id in
             if let r = StoreRegion(rawValue: id) { self?.pick(p, region: r) }
@@ -196,10 +196,10 @@ final class BattleNetStore: ObservableObject, DownloadDriver {
 
     static func label(_ r: StoreRegion) -> String {
         switch r {
-        case .us: "Americas (us)"
-        case .eu: "Europe (eu)"
-        case .kr: "Korea (kr)"
-        case .tw: "Taiwan (tw)"
+        case .us: "美洲 (us)"
+        case .eu: "欧洲 (eu)"
+        case .kr: "韩国 (kr)"
+        case .tw: "中国台湾 (tw)"
         }
     }
 
@@ -251,8 +251,8 @@ final class BattleNetStore: ObservableObject, DownloadDriver {
 
     var blocker: String? {
         let net = NetworkPath.shared
-        if !net.connected { return "Waiting for a connection" }
-        if !net.mayDownload { return "Waiting for Wi-Fi" }
+        if !net.connected { return "正在等待网络连接" }
+        if !net.mayDownload { return "正在等待 Wi-Fi" }
         return nil
     }
 

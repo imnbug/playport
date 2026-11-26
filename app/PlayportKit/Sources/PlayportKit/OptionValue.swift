@@ -23,11 +23,11 @@ public struct OptionValue: Equatable, Sendable {
     public static func of<T>(own: T?, compat: T? = nil, inherited: T, name: (T) -> String) -> OptionValue {
         if let own { return OptionValue(text: name(own), changed: true) }
         if let compat {
-            var v = OptionValue(text: "\(compatMarker) For this game · " + name(compat), changed: false)
+            var v = OptionValue(text: "\(compatMarker) 针对此游戏 · " + name(compat), changed: false)
             v.compat = true
             return v
         }
-        return OptionValue(text: "Default · " + name(inherited), changed: false)
+        return OptionValue(text: "默认 · " + name(inherited), changed: false)
     }
 
     /// The marker before a value set for the game's compatibility.

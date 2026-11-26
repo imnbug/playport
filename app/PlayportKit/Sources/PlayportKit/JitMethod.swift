@@ -45,18 +45,18 @@ public enum JitMethod: String, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .builtIn: "Built-in"
+        case .builtIn: "内置"
         case .stikDebug: "StikDebug"
-        case .external: "Another app"
+        case .external: "其他应用"
         }
     }
 
     /// The picker's grey text at the row's right.
     public var detail: String {
         switch self {
-        case .builtIn: "Playport's own helper"
-        case .stikDebug: "Play opens StikDebug"
-        case .external: "Play waits for it"
+        case .builtIn: "使用 Playport 自带助手"
+        case .stikDebug: "启动游戏时自动打开 StikDebug"
+        case .external: "启动游戏时等待外部附加"
         }
     }
 
@@ -73,14 +73,14 @@ public enum JitMethod: String, CaseIterable, Sendable {
     /// CS_DEBUGGED flag. Explain the next UI step, without claiming to know
     /// which script the other app ran.
     public func debuggerFailureMessage(detached: Bool, inLiveContainer: Bool) -> String {
-        let why = detached ? "The debugger is no longer attached." : "No live debugger arrived."
+        let why = detached ? "调试器已断开连接。" : "未检测到活动的调试器。"
         switch self {
         case .builtIn:
-            return why + " Check Built-in JIT in Settings › Setup check, then close Playport and try again."
+            return why + "请在「设置 › 环境检查」中检查内置 JIT 状态，然后关闭 Playport 重试。"
         case .stikDebug, .external:
             let target = inLiveContainer ? "LiveContainer" : "Playport"
-            let launch = inLiveContainer ? "launch Playport again from LiveContainer with JIT" : "relaunch Playport with JIT"
-            return why + " In StikDebug, assign universal.js to \(target), then \(launch). A plain attach-and-detach does not prepare Playport's JIT pool."
+            let launch = inLiveContainer ? "从 LiveContainer 使用 JIT 重新启动 Playport" : "使用 JIT 重新启动 Playport"
+            return why + "请在 StikDebug 中为 \(target) 指定 universal.js 脚本，然后\(launch)。普通的附加后断开无法初始化 Playport 的 JIT 内存池。"
         }
     }
 

@@ -66,7 +66,7 @@ public enum LibraryFilter: String, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .all: "All games"
+        case .all: "全部游戏"
         case .steam: Store.steam.label
         case .gog: Store.gog.label
         case .epic: Store.epic.label

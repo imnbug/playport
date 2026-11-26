@@ -213,13 +213,13 @@ public struct LaunchSettings: Codable, Equatable, Sendable {
     /// `key=value`; nil when it is used.
     public static func unusedRuntimeKeysNote(_ line: String) -> String? {
         do {
-            guard let items = runtimeItems(line) else { return "Not key=value items: not used" }
+            guard let items = runtimeItems(line) else { return "非 key=value 格式：未生效" }
             try TitleConfig.validate(items)
             return nil
         } catch LaunchPlanError.refusedKey(let key) {
-            return "\(key) \(TitleConfig.refusal(key)) (no per-game memory keys): not used"
+            return "\(key) \(TitleConfig.refusal(key))（不支持单游戏内存参数）：未生效"
         } catch {
-            return "Not key=value items: not used"
+            return "非 key=value 格式：未生效"
         }
     }
 

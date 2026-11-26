@@ -59,7 +59,7 @@ final class SignInState: ObservableObject {
 
     private func askName(_ model: SteamAccountModel) {
         if preview == nil { model.cancelCredentialSignIn() } else { preview?.reset() }
-        PadModal.shared.keyboard(title: "Steam account name", text: card(model).accountName,
+        PadModal.shared.keyboard(title: "Steam 账户名称", text: card(model).accountName,
                                  placeholder: CredentialSignInModel.Copy.placeholder, maxLength: 64, privacy: .hidden) { [weak self] name in
             guard let self else { return }
             let next: Bool
@@ -74,7 +74,7 @@ final class SignInState: ObservableObject {
     }
 
     private func askPassword(_ model: SteamAccountModel) {
-        PadModal.shared.keyboard(title: "Password", text: "", placeholder: "Password", maxLength: 128, privacy: .secret) { [weak self] password in
+        PadModal.shared.keyboard(title: "密码", text: "", placeholder: "密码", maxLength: 128, privacy: .secret) { [weak self] password in
             guard let self else { return }
             if self.preview != nil {
                 self.preview?.passwordEntered(empty: password.isEmpty)
@@ -87,7 +87,7 @@ final class SignInState: ObservableObject {
     }
 
     private func askCode(_ model: SteamAccountModel) {
-        PadModal.shared.keyboard(title: "Steam Guard code", text: "", placeholder: "Code", maxLength: 12, privacy: .hidden) { [weak self] code in
+        PadModal.shared.keyboard(title: "Steam 令牌验证码", text: "", placeholder: "验证码", maxLength: 12, privacy: .hidden) { [weak self] code in
             guard let self, !code.trimmingCharacters(in: .whitespaces).isEmpty else { return }
             if self.preview != nil {
                 self.preview?.codeSubmitted()
@@ -146,9 +146,9 @@ final class SignInState: ObservableObject {
         var h: [PadHint] = []
         let focus = PadFocus.shared
         if let a = focus.hint, !a.isEmpty { h.append(PadHint(button: .a, label: a) { focus.activate() }) }
-        if focus.focused != SignInView.qrItem { h.append(PadHint(button: .rb, label: "Use QR code") { self.useQR(model) }) }
+        if focus.focused != SignInView.qrItem { h.append(PadHint(button: .rb, label: "使用二维码") { self.useQR(model) }) }
         let running = card(model).isInFlight || (preview == nil && model.pairing.isInFlight)
-        h.append(PadHint(button: .b, label: running ? "Cancel" : "Not now") { self.back(model) })
+        h.append(PadHint(button: .b, label: running ? "取消" : "暂不登录") { self.back(model) })
         return h
     }
 
@@ -210,7 +210,7 @@ struct SignInView: View {
     static let qrItem = "signin:qr"
     static let startItem = cardItem
     /// The footer's grey note at the left.
-    static let footerNote = "Games already in C:\\Games play without Steam"
+    static let footerNote = "C:\\Games 中已有的游戏无需登录 Steam 即可游玩"
 
     @EnvironmentObject private var model: SteamAccountModel
     @ObservedObject private var state = SignInState.shared
@@ -220,8 +220,8 @@ struct SignInView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: 14) {
-                Text("Sign in to Steam").font(PP.display(28))
-                Text("Your games, cloud saves and achievements. Playport keeps no password.")
+                Text("登录 Steam").font(PP.display(28))
+                Text("同步你的游戏库、云存档与成就。Playport 不会保存你的密码。")
                     .font(.system(size: 13)).foregroundStyle(PP.muted).lineLimit(1).minimumScaleFactor(0.8)
             }
             .padding(.top, 20).padding(.bottom, 12)
@@ -273,7 +273,7 @@ struct SignInView: View {
             }
             Spacer(minLength: 0)
             if state.preview != nil {
-                Text("Preview: nothing here goes to Steam.")
+                Text("预览模式：此处输入的内容不会发送至 Steam。")
                     .font(.system(size: 11)).foregroundStyle(PP.muted)
             }
             nameField(card)
@@ -291,7 +291,7 @@ struct SignInView: View {
             Spacer(minLength: 0)
             if !card.accountName.isEmpty, card.isInFlight {
                 Image(systemName: "lock.fill").font(.system(size: 11)).foregroundStyle(PP.muted)
-                Text("Password sent").font(.system(size: 12)).foregroundStyle(PP.muted)
+                Text("密码已发送").font(.system(size: 12)).foregroundStyle(PP.muted)
             }
         }
         .padding(.horizontal, 12)
@@ -311,15 +311,15 @@ struct SignInView: View {
                 // Hidden unless active, so the app switcher's snapshot never holds the code.
                 if state.preview == nil, scenePhase == .active, let code = pairing.code, let image = QRImage.make(code.payload) {
                     Image(uiImage: image).interpolation(.none).resizable().scaledToFit().padding(6)
-                        .accessibilityLabel("Steam sign-in QR code \(code.fingerprint)")
+                        .accessibilityLabel("Steam 登录二维码 \(code.fingerprint)")
                 } else {
                     Image(systemName: "qrcode").font(.system(size: 54, weight: .light)).foregroundStyle(Color(hex: 0x3A4452))
                 }
             }
             .frame(width: 132, height: 132)
             VStack(alignment: .leading, spacing: 8) {
-                Text("ANOTHER DEVICE").font(.system(size: 11, weight: .semibold)).tracking(1.1).foregroundStyle(PP.muted)
-                Text("Scan with the Steam app").font(PP.display(19)).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                Text("其他设备").font(.system(size: 11, weight: .semibold)).tracking(1.1).foregroundStyle(PP.muted)
+                Text("使用 Steam 手机应用扫码").font(PP.display(19)).lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(qrText(pairing, at: context.date))
                         .font(.system(size: 12)).foregroundStyle(PP.muted).lineSpacing(2)
@@ -338,10 +338,10 @@ struct SignInView: View {
     }
 
     private func qrText(_ p: PairingModel, at date: Date) -> String {
-        let path = "Steam app › Steam Guard › Scan a QR code."
+        let path = "Steam 手机应用 › Steam 令牌 › 扫描二维码。"
         switch p.phase {
-        case .intro: return path + " RB shows a code."
-        case .showingCode(let c): return path + " Code \(c.fingerprint), new code in \(p.countdown(at: date))."
+        case .intro: return path + " 按 RB 显示二维码。"
+        case .showingCode(let c): return path + " 识别码 \(c.fingerprint)，将在 \(p.countdown(at: date)) 后刷新。"
         default: return p.message
         }
     }

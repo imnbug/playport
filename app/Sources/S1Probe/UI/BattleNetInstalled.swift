@@ -73,8 +73,8 @@ final class BattleNetInstalled: ObservableObject {
 
     /// The region picker (PadModal), as the installed page's Region row opens it.
     func pickRegion(_ p: BattleNetProduct) {
-        PadModal.shared.picker(title: "Store region", context: p.name,
-                               note: "Your Battle.net account's region. The game signs in to it. Changing it downloads nothing.",
+        PadModal.shared.picker(title: "商店地区", context: p.name,
+                               note: "你的 Battle.net 账号所属地区，游戏启动后将登录至该地区。切换地区无需重新下载数据。",
                                options: StoreRegion.allCases.map { PadOption(id: $0.rawValue, label: BattleNetStore.label($0)) },
                                selected: current[p]?.region.rawValue) { [weak self] id in
             guard let r = StoreRegion(rawValue: id) else { return }
@@ -86,7 +86,7 @@ final class BattleNetInstalled: ObservableObject {
     /// why it failed, or nil.
     @discardableResult
     func changeRegion(_ p: BattleNetProduct, to region: StoreRegion) async -> String? {
-        guard let root = root(p) else { return "\(p.name) is not installed" }
+        guard let root = root(p) else { return "\(p.name) 尚未安装" }
         guard current[p]?.region != region, !changingRegion.contains(p) else { return nil }
         changingRegion.insert(p)
         defer { changingRegion.remove(p) }
@@ -128,11 +128,11 @@ final class BattleNetInstalled: ObservableObject {
         Task {
             let locales = await locales(p)
             guard !locales.isEmpty else {
-                errors[p] = BattleNetStore.shared.error ?? "The languages could not be read."
+                errors[p] = BattleNetStore.shared.error ?? "无法读取可用语言列表。"
                 return
             }
-            PadModal.shared.picker(title: "Language", context: p.name,
-                                   note: "The game's text and voices. A new language downloads its data in Downloads; Play is available again once it finishes.",
+            PadModal.shared.picker(title: "语言", context: p.name,
+                                   note: "游戏的文本与语音语言。切换新语言后将在「下载」中获取对应数据，下载完成后即可开始游戏。",
                                    options: locales.map { PadOption(id: $0, label: Self.label($0)) },
                                    selected: current[p]?.locale) { [weak self] id in
                 self?.changeLanguage(p, to: id, downloads: downloads)
@@ -143,7 +143,7 @@ final class BattleNetInstalled: ObservableObject {
     /// Queues the language change in Downloads. Returns why it was not queued, or nil.
     @discardableResult
     func changeLanguage(_ p: BattleNetProduct, to locale: String, downloads: Downloads) -> String? {
-        guard let now = current[p] else { return "\(p.name) is not installed" }
+        guard let now = current[p] else { return "\(p.name) 尚未安装" }
         guard now.locale != locale else { return nil }
         errors[p] = nil
         log.info("battlenet", "\(p.code): language \(now.locale) → \(locale) queued")
@@ -190,7 +190,7 @@ final class BattleNetInstalled: ObservableObject {
     /// A failure is `unreachable`, worded by its kind for the player (no answer, a refusal or a
     /// 429, damaged data, BattleNet.reason): Play reports it and goes on.
     func checkUpdate(_ p: BattleNetProduct) async -> BattleNetPlay.Update {
-        guard let root = root(p) else { return .unreachable("\(p.name) is not installed.") }
+        guard let root = root(p) else { return .unreachable("\(p.name) 尚未安装。") }
         updates[p] = .checking
         let installer = BattleNetInstaller(client: BattleNetStore.shared.client, log: log)
         do {
@@ -219,7 +219,7 @@ final class BattleNetInstalled: ObservableObject {
     /// Returns why it was not queued (it does not fit), or nil.
     @discardableResult
     func update(_ p: BattleNetProduct, downloads: Downloads, thenPlay: String? = nil) -> String? {
-        guard case let .available(_, to, bytes)? = updates[p] else { return "No update was found for \(p.name)." }
+        guard case let .available(_, to, bytes)? = updates[p] else { return "未找到 \(p.name) 的可用更新。" }
         if let free = LibraryModel.shared.freeBytes, let why = BattleNet.refusal(needed: BattleNet.spaceNeeded(update: bytes), free: free) {
             log.info("battlenet", "\(p.code): update to \(to) refused: \(why)")
             errors[p] = why

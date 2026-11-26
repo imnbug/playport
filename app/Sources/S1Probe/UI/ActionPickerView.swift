@@ -75,12 +75,12 @@ struct ActionPickerView: View {
                 Spacer(minLength: 0)
                 HStack(spacing: 18) {
                     Spacer(minLength: 0)
-                    PadModalHint(button: .lb, also: .rb, label: "Tabs") { session.press(.rb) }
-                    PadModalHint(button: .a, label: "Choose") { session.press(.a) }
+                    PadModalHint(button: .lb, also: .rb, label: "切换分类") { session.press(.rb) }
+                    PadModalHint(button: .a, label: "选择") { session.press(.a) }
                     if m.tabs.contains(.keyboard), !m.listening {
-                        PadModalHint(button: .x, label: "Press a real key") { session.press(.x) }
+                        PadModalHint(button: .x, label: "按下实体按键") { session.press(.x) }
                     }
-                    PadModalHint(button: .b, label: m.listening ? "Stop waiting" : "Cancel") { session.press(.b) }
+                    PadModalHint(button: .b, label: m.listening ? "停止等待" : "取消") { session.press(.b) }
                 }
                 .frame(height: 36)
             }
@@ -97,7 +97,7 @@ struct ActionPickerView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(m.title).font(PP.display(20)).foregroundStyle(PP.text).lineLimit(1)
                 Spacer(minLength: 8)
-                Text("Now:").font(.system(size: 12)).foregroundStyle(PP.muted)
+                Text("当前：").font(.system(size: 12)).foregroundStyle(PP.muted)
                 cap(ActionText.name(m.current), on: false)
             }
             HStack(spacing: 10) {
@@ -118,7 +118,7 @@ struct ActionPickerView: View {
                 Button { session.press(.rb) } label: { PadGlyph(button: .rb) }.buttonStyle(.plain)
             }
             if m.listening {
-                Text("Press a key on the keyboard…").font(.system(size: 15, weight: .medium)).foregroundStyle(PP.accent)
+                Text("请按下键盘上的任意按键…").font(.system(size: 15, weight: .medium)).foregroundStyle(PP.accent)
                     .frame(maxWidth: .infinity, minHeight: 120)
                     .background(PP.background.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
                     .accessibilityIdentifier("action-listening")
@@ -159,11 +159,11 @@ struct ActionPickerView: View {
     /// The modifier chips and the recent choices (ActionPicker.dc.html's last line).
     private func bottomRow(_ m: ActionPicker, _ cells: [ActionPickerCell], row r: Int) -> some View {
         HStack(spacing: 6) {
-            if cells.contains(where: { $0.id.hasPrefix("mod:") }) { Text("With").font(.system(size: 12.5)).foregroundStyle(PP.muted) }
+            if cells.contains(where: { $0.id.hasPrefix("mod:") }) { Text("组合键").font(.system(size: 12.5)).foregroundStyle(PP.muted) }
             ForEach(cells.indices, id: \.self) { c in
                 if cells[c].id == "recent:0" {
                     Spacer(minLength: 8)
-                    Text("Recent").font(.system(size: 12.5)).foregroundStyle(PP.muted)
+                    Text("最近使用").font(.system(size: 12.5)).foregroundStyle(PP.muted)
                 }
                 key(cells[c], on: m.row == r && m.column == c, chip: true, lit: Self.isOn(cells[c], m))
                     .fixedSize()

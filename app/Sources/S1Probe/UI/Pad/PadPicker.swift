@@ -80,8 +80,8 @@ struct PadPickerPanel: View {
                 VStack {
                     Spacer()
                     HStack(spacing: 18) {
-                        PadModalHint(button: .a, label: "Choose") { session.press(.a) }
-                        PadModalHint(button: .b, label: "Back") { session.press(.b) }
+                        PadModalHint(button: .a, label: "选择") { session.press(.a) }
+                        PadModalHint(button: .b, label: "返回") { session.press(.b) }
                         Spacer(minLength: 0)
                     }
                     .padding(.leading, 36)
@@ -176,7 +176,7 @@ struct PadValueRow: View {
                 arrow("›", by: 1)
             }
         }
-        .padItem(id, hint: "Change", cornerRadius: 10, adjust: step) { step(1, wrapping: true) }
+        .padItem(id, hint: "更改", cornerRadius: 10, adjust: step) { step(1, wrapping: true) }
     }
 
     private func arrow(_ s: String, by: Int) -> some View {

@@ -25,7 +25,7 @@ final class GameImports: ObservableObject, DownloadDriver {
     /// installer gets an answer (installers are not run; plan 1.5, owner 2026-10-06).
     static let contentTypes: [UTType] = [.folder, .zip] + [UTType(filenameExtension: "exe")].compactMap { $0 }
 
-    static let pickAgain = "Pick the folder again in Add a game to continue."
+    static let pickAgain = "请在「导入本地游戏」中重新选择该文件夹以继续。"
 
     private struct Picked {
         var url: URL
@@ -87,10 +87,10 @@ final class GameImports: ObservableObject, DownloadDriver {
         switch error {
         case ImportFailure.needsSource: return Self.pickAgain
         case let e as ImportError: return InstallCopy.detailed(e.description, error)
-        case is CancellationError: return "The import stopped."
+        case is CancellationError: return "导入已停止。"
         default:
             if case .insufficientSpace? = error as? ClientError { return InstallCopy.reason(error) }
-            return InstallCopy.detailed("The import stopped: a file could not be copied. Pick the folder again to retry.", error)
+            return InstallCopy.detailed("导入已停止：无法复制文件，请重新选择文件夹重试。", error)
         }
     }
 
@@ -100,7 +100,7 @@ final class GameImports: ObservableObject, DownloadDriver {
     /// resume the held import of the same item. Returns a message for the player
     /// when it cannot be imported.
     func picked(_ url: URL) async -> String? {
-        guard let downloads else { return "Downloads are not ready yet." }
+        guard let downloads else { return "下载队列尚未就绪。" }
         let isDir = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? url.hasDirectoryPath
         let ext = url.pathExtension.lowercased()
         let source: ImportSource
@@ -109,9 +109,9 @@ final class GameImports: ObservableObject, DownloadDriver {
         } else if ext == "zip" {
             source = .zip(url)
         } else if ext == "exe" {
-            return "Playport doesn't run installers. Pick the installed game's folder, or a .zip of it."
+            return "Playport 不直接运行安装程序（EXE）。请选择已安装好的游戏文件夹或其 .zip 压缩包。"
         } else {
-            return "Pick a game's folder or a .zip of it."
+            return "请选择游戏文件夹或其 .zip 压缩包。"
         }
         planning = true
         defer { planning = false }
@@ -125,7 +125,7 @@ final class GameImports: ObservableObject, DownloadDriver {
         case let .success(p): plan = p
         case let .failure(e):
             SteamUILog.logger.warn("import", "\(url.lastPathComponent): refused: \(e)")
-            return (e as? ImportError)?.description ?? "Playport can't read that: \(e)"
+            return (e as? ImportError)?.description ?? "Playport 无法读取该内容：\(e)"
         }
         let name = url.lastPathComponent
         // The same item again: its held import resumes from the stage.

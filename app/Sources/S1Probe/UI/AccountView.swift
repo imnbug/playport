@@ -11,7 +11,7 @@ struct SteamAccountSettings: View {
     @EnvironmentObject private var model: SteamAccountModel
 
     var body: some View {
-        SettingsNote(text: "Your Steam library, cloud saves and achievements come from this account.")
+        SettingsNote(text: "你的 Steam 游戏库、云存档与成就均来自此账号。")
         SettingsInfoRow(id: "steam:status", title: AccountCopy.status(model.state), subtitle: detail)
         switch model.state {
         case let .signedIn(a), let .offline(a, _):
@@ -20,8 +20,8 @@ struct SteamAccountSettings: View {
             EmptyView()
         case .signedOut, .pairing, .expired:
             // Sign in to Steam (SignInView.swift): the account name on this phone, or a QR code.
-            PadRow(id: "set:steam:signin", title: "Sign in to Steam", subtitle: "With your account name, or a QR code from another device",
-                   accessory: .chevron, hint: "Sign in") { SignInState.shared.open(preview: false) }
+            PadRow(id: "set:steam:signin", title: "登录 Steam", subtitle: "使用账户名称登录，或用其他设备扫描二维码",
+                   accessory: .chevron, hint: "登录") { SignInState.shared.open(preview: false) }
         }
     }
 
@@ -29,7 +29,7 @@ struct SteamAccountSettings: View {
         switch model.state {
         case let .signedIn(a), let .offline(a, _):
             AccountCopy.pairedUntil(a) { $0.formatted(date: .abbreviated, time: .omitted) }
-        case .unknown, .restoring: "Checking…"
+        case .unknown, .restoring: "正在检查…"
         default: nil
         }
     }
@@ -39,28 +39,28 @@ struct SteamAccountSettings: View {
         #if !PLAYPORT_RELEASE
         // The service's raw renewal result ("not-due", "failed: …"); a release build shows none.
         if let r = model.lastRenewal {
-            SettingsInfoRow(id: "steam:renewal", title: "Last renewal check",
+            SettingsInfoRow(id: "steam:renewal", title: "上次续期检查",
                             subtitle: r.at.formatted(.relative(presentation: .named)), value: r.result)
         }
         #endif
-        PadRow(id: "set:steam:refresh", title: "Refresh library",
-               subtitle: model.gamesError ?? model.gamesFetchedAt.map { "Fetched " + $0.formatted(.relative(presentation: .named)) },
-               value: model.gamesLoading ? "Asking Steam…" : nil, hint: "Refresh") {
+        PadRow(id: "set:steam:refresh", title: "刷新游戏库",
+               subtitle: model.gamesError ?? model.gamesFetchedAt.map { "获取于 " + $0.formatted(.relative(presentation: .named)) },
+               value: model.gamesLoading ? "正在连接 Steam…" : nil, hint: "刷新") {
             guard !model.gamesLoading else { return }
             Task { await model.loadGames(refresh: true) }
         }
-        PadRow(id: "set:steam:signout", title: model.signingOut ? "Signing out…" : "Sign out", subtitle: AccountCopy.signOutNote,
-               destructive: true, hint: "Sign out") {
+        PadRow(id: "set:steam:signout", title: model.signingOut ? "正在退出登录…" : "退出登录", subtitle: AccountCopy.signOutNote,
+               destructive: true, hint: "退出登录") {
             guard !model.signingOut else { return }
             PadModal.shared.picker(
-                title: "Sign out of Steam?", context: "Settings · Steam account", note: AccountCopy.signOutNote,
-                options: [PadOption(id: "keep", label: "Stay signed in"), PadOption(id: "out", label: "Sign out")],
+                title: "要退出登录 Steam 吗？", context: "设置 · Steam 账号", note: AccountCopy.signOutNote,
+                options: [PadOption(id: "keep", label: "保持登录"), PadOption(id: "out", label: "退出登录")],
                 selected: "keep") { if $0 == "out" { Task { await model.signOut() } } }
         }
         #if !PLAYPORT_RELEASE
         // The sign-in screen while signed in: its steps shown, and nothing goes to Steam.
-        PadRow(id: "set:steam:signinPreview", title: "Preview sign-in", subtitle: "The sign-in screen; nothing goes to Steam",
-               accessory: .chevron, hint: "Preview") { SignInState.shared.open(preview: true) }
+        PadRow(id: "set:steam:signinPreview", title: "预览登录界面", subtitle: "查看登录界面流程，不会向 Steam 发送任何信息",
+               accessory: .chevron, hint: "预览") { SignInState.shared.open(preview: true) }
         #endif
     }
 }

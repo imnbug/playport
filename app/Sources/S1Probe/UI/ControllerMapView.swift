@@ -96,7 +96,7 @@ enum ControllerMapAccess {
         guard case .game(let id) = t, ControllerMapConfirm.neededForDefault(own: ControlsStore.shared.game(id).controllerMap)
         else { return reset() }
         let c = ControllerMapConfirm.useDefault
-        PadModal.shared.picker(title: c.title, context: (context ?? "Settings") + " · Controller", note: c.note,
+        PadModal.shared.picker(title: c.title, context: (context ?? "设置") + " · 手柄", note: c.note,
                                options: c.options.map { PadOption(id: $0.id, label: $0.label) },
                                selected: c.defaultChoice) { choice in
             if c.outcome(choice, for: map(t)) == .useDefault { reset() }
@@ -185,16 +185,16 @@ struct ControllerMapView: View {
     private func header(_ map: ControllerMap) -> some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 0) {
-                Text(((context.map { $0 + " · " } ?? "Settings · ") + "Controls").uppercased())
+                Text(((context.map { $0 + " · " } ?? "设置 · ") + "操控").uppercased())
                     .font(.system(size: 11, weight: .semibold)).tracking(1.1).foregroundStyle(PP.muted).lineLimit(1)
-                Text("Controller").font(PP.display(24)).foregroundStyle(PP.text)
+                Text("手柄").font(PP.display(24)).foregroundStyle(PP.text)
             }
             Spacer(minLength: 8)
             switch map.mode {
             case .keyboardMouse:
-                smallButton(Self.copyID, "Edit a copy", enabled: true) { editCopy() }
+                smallButton(Self.copyID, "编辑副本", enabled: true) { editCopy() }
             case .custom:
-                smallButton(Self.resetAllID, "Reset all", enabled: map.custom != ControllerMap.keyboardMouse) { resetAll() }
+                smallButton(Self.resetAllID, "全部重置", enabled: map.custom != ControllerMap.keyboardMouse) { resetAll() }
             case .controller:
                 EmptyView()
             }
@@ -226,7 +226,7 @@ struct ControllerMapView: View {
             .background(PP.surface, in: RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(selected ? PP.accent : PP.line, lineWidth: selected ? 2 : 1))
         }
-        .padItem(Self.modeID, hint: "Change", cornerRadius: 10,
+        .padItem(Self.modeID, hint: "更改", cornerRadius: 10,
                  reset: own ? {
                      ControllerMapAccess.resetToDefault(target, context: context) { ControllerMapAccess.save(nil, target) }
                  } : nil, ring: false) {
@@ -240,7 +240,7 @@ struct ControllerMapView: View {
             .foregroundStyle(selected ? PP.background : enabled ? PP.soft : PP.muted.opacity(0.6))
             .padding(.horizontal, 12).padding(.vertical, 8)
             .background(selected ? PP.text : PP.surface, in: RoundedRectangle(cornerRadius: 10))
-            .padItem(id, hint: enabled ? "Choose" : "", cornerRadius: 10, ring: false) { if enabled { action() } }
+            .padItem(id, hint: enabled ? "选择" : "", cornerRadius: 10, ring: false) { if enabled { action() } }
     }
 
     // MARK: the rows
@@ -249,7 +249,7 @@ struct ControllerMapView: View {
         VStack(spacing: 4) {
             ForEach(rows, id: \.self) { row in inputRow(row, map, table) }
             if rows.first?.isLeft == false {
-                Text("HOME · PLAYPORT MENU").font(.system(size: 9.5, weight: .semibold)).tracking(0.8)
+                Text("HOME · PLAYPORT 菜单").font(.system(size: 9.5, weight: .semibold)).tracking(0.8)
                     .foregroundStyle(PP.accent).frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 10).padding(.top, 2)
             }
         }
@@ -266,7 +266,7 @@ struct ControllerMapView: View {
                 .frame(width: 44, alignment: .leading).lineLimit(1)
             if map.mode == .controller {
                 // The game sees the pad as it is.
-                Text("As the controller").font(.system(size: 11.5, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                Text("手柄原生").font(.system(size: 11.5, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
                     .foregroundStyle(selected ? PP.background : PP.muted)
             } else {
                 ForEach(Array(row.caps(in: table).enumerated()), id: \.offset) { _, cap in
@@ -284,7 +284,7 @@ struct ControllerMapView: View {
         .frame(height: 26)
         .background(selected ? PP.text : PP.surface, in: RoundedRectangle(cornerRadius: 9))
         .opacity(map.mode == .controller && !selected ? 0.6 : 1)
-        content.padItem(row.itemID, hint: "Edit", cornerRadius: 9,
+        content.padItem(row.itemID, hint: "编辑", cornerRadius: 9,
                         reset: changed ? { saveTable(ControllerMapEdit.reset(row, in: table)) } : nil, ring: false) {
             edit(row)
         }
@@ -299,8 +299,8 @@ struct ControllerMapView: View {
         // "Default…" on a phone: touch controls 3c): "Default" goes under the title.
         return HStack(spacing: 6) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Look speed").font(.system(size: 13, weight: .medium)).lineLimit(1)
-                Text("Mouse look" + (own || target == .defaults ? "" : " · Default")).font(.system(size: 10))
+                Text("视角速度").font(.system(size: 13, weight: .medium)).lineLimit(1)
+                Text("鼠标视角" + (own || target == .defaults ? "" : " · 默认")).font(.system(size: 10))
                     .foregroundStyle(selected ? Color(hex: 0x3A4452) : PP.muted).lineLimit(1)
             }
             .fixedSize()
@@ -317,15 +317,15 @@ struct ControllerMapView: View {
         .padding(.horizontal, 12).frame(height: 34)
         .background(selected ? PP.text : PP.surface, in: RoundedRectangle(cornerRadius: 9))
         .frame(maxWidth: 300)
-        .padItem(Self.lookSpeedID, hint: "Change", cornerRadius: 9, adjust: stepLookSpeed,
+        .padItem(Self.lookSpeedID, hint: "更改", cornerRadius: 9, adjust: stepLookSpeed,
                  reset: own ? { ControllerMapAccess.saveLookSpeed(nil, target) } : nil, ring: false) { pickLookSpeed() }
     }
 
     static func hint(_ mode: ControllerMap.Mode) -> String {
         switch mode {
-        case .controller: "The game sees an Xbox controller. LB and RB change the mode; A on an input changes it in Custom."
-        case .keyboardMouse: "Read only. A on an input edits it in a copy (Custom). LB and RB change the mode."
-        case .custom: "A changes the ringed input, Y puts it back. LB and RB change the mode."
+        case .controller: "游戏直接识别为 Xbox 手柄。按 LB / RB 切换模式；对按键按 A 可在「自定义」中修改映射。"
+        case .keyboardMouse: "只读预设。对按键按 A 可在副本（自定义）中编辑；按 LB / RB 切换模式。"
+        case .custom: "按 A 修改选中按键，按 Y 恢复预设；按 LB / RB 切换模式。"
         }
     }
 
@@ -355,10 +355,10 @@ struct ControllerMapView: View {
         let own = ControllerMapAccess.isOwnLookSpeed(target)
         let v = ControllerMapAccess.lookSpeed(target)
         let base: [PadOption] = target == .defaults ? []
-            : [PadOption(id: "", label: "Default", detail: LookSpeed.label(store.defaults.lookSpeed) + ", from Settings")]
+            : [PadOption(id: "", label: "默认", detail: LookSpeed.label(store.defaults.lookSpeed) + "（来自设置）")]
         PadModal.shared.picker(
-            title: "Look speed", context: (context ?? "Settings") + " · Controller",
-            note: "How fast a stick bound to mouse look turns the view. 1.0× is 2000 mouse counts a second.",
+            title: "视角速度", context: (context ?? "设置") + " · 手柄",
+            note: "绑定为鼠标视角的摇杆转动视角的速度。1.0× 对应每秒 2000 鼠标计数。",
             options: base + LookSpeed.steps.map { PadOption(id: String($0), label: LookSpeed.label($0)) },
             selected: own || target == .defaults ? String(LookSpeed.steps[GyroSteps.nearest(v, in: LookSpeed.steps)]) : "") { id in
             ControllerMapAccess.saveLookSpeed(id.isEmpty ? nil : Double(id), target)
@@ -381,7 +381,7 @@ struct ControllerMapView: View {
     }
 
     private func confirm(_ c: ControllerMapConfirm, _ map: ControllerMap) {
-        PadModal.shared.picker(title: c.title, context: (context ?? "Settings") + " · Controller", note: c.note,
+        PadModal.shared.picker(title: c.title, context: (context ?? "设置") + " · 手柄", note: c.note,
                                options: c.options.map { PadOption(id: $0.id, label: $0.label) },
                                selected: c.defaultChoice) { choice in
             switch c.outcome(choice, for: ControllerMapAccess.map(target)) {
@@ -396,7 +396,7 @@ struct ControllerMapView: View {
     /// Custom?), then its editor in Custom.
     private func edit(_ row: ControllerMapRow) {
         guard let c = ControllerMapConfirm.forEditing(ControllerMapAccess.map(target)) else { return change(row) }
-        PadModal.shared.picker(title: c.title, context: (context ?? "Settings") + " · Controller · " + row.title, note: c.note,
+        PadModal.shared.picker(title: c.title, context: (context ?? "设置") + " · 手柄 · " + row.title, note: c.note,
                                options: c.options.map { PadOption(id: $0.id, label: $0.label) },
                                selected: c.defaultChoice) { choice in
             guard case .save(let m) = c.outcome(choice, for: ControllerMapAccess.map(target)) else { return }
@@ -411,9 +411,9 @@ struct ControllerMapView: View {
         let table = ControllerMapAccess.map(target).custom
         guard let parts = ControllerMapEdit.parts(row, in: table) else { return pick(.control(row.pad!)) }
         PadModal.shared.picker(
-            title: row.title, context: (context ?? "Settings") + " · Controller",
-            note: row.stick == nil ? "Each direction does its own." : "Whole: the stick moves the mouse or a pad's stick. "
-                + "Four directions: each presses a key or a button, past half way.",
+            title: row.title, context: (context ?? "设置") + " · 手柄",
+            note: row.stick == nil ? "每个方向可单独设置触发动作。" : "整根摇杆：推动摇杆可移动鼠标视角或映射为手柄摇杆。"
+                + "四个方向：推过半程时，各方向分别触发一个键盘或手柄按键。",
             options: parts.map { PadOption(id: $0.id, label: $0.label, detail: $0.detail) },
             selected: Set(parts.filter(\.on).map(\.id))) { id in
             guard let part = parts.first(where: { $0.id == id }) else { return }
@@ -486,12 +486,12 @@ enum ControllerMapRing {
         let focus = PadFocus.shared
         var h: [PadHint] = []
         if let a = focus.hint, !a.isEmpty { h.append(PadHint(button: .a, label: a) { focus.activate() }) }
-        h.append(PadHint(button: .lb, label: "Mode", action: { modeSteps.send(1) }, also: .rb))
+        h.append(PadHint(button: .lb, label: "模式", action: { modeSteps.send(1) }, also: .rb))
         if focus.canReset {
             let row = focus.focused.flatMap(ControllerMapRow.init(itemID:)) != nil
-            h.append(PadHint(button: .y, label: row ? "Reset row" : "Back to default") { focus.resetFocused() })
+            h.append(PadHint(button: .y, label: row ? "重置此项" : "恢复默认") { focus.resetFocused() })
         }
-        h.append(PadHint(button: .b, label: "Back", action: back))
+        h.append(PadHint(button: .b, label: "返回", action: back))
         return h
     }
 }

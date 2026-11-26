@@ -78,55 +78,52 @@ private struct LicencesList: View {
     var body: some View {
         VStack(spacing: 8) {
             SettingsNote(text: "Playport \(BundledLicences.version) · \(BundledLicences.copyright)")
-            LicenceParagraph(id: "playport", text: "Playport is free software: you can redistribute it and/or modify it "
-                             + "under the terms of the GNU General Public License as published by the Free Software "
-                             + "Foundation, either version 3 of the License, or (at your option) any later version, "
-                             + "with the additional permission of its licence exception.")
-            LicenceParagraph(id: "warranty", text: "Playport is distributed in the hope that it will be useful, but "
-                             + "WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS "
-                             + "FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.")
+            LicenceParagraph(id: "playport", text: "Playport 是自由软件：你可以遵照自由软件基金会（Free Software Foundation）发布的 "
+                             + "GNU 通用公共许可证（GNU General Public License）第三版或（由你选择的）任何更高版本，"
+                             + "以及其许可证附加豁免条款的额外许可，对其进行再分发和/或修改。")
+            LicenceParagraph(id: "warranty", text: "发布 Playport 是希望它能够发挥作用，但没有任何担保（WITHOUT ANY WARRANTY）；"
+                             + "甚至不包含针对特定用途的适销性或适用性的默示担保。详情请参阅 GNU 通用公共许可证。")
             if case .success(let licences) = BundledLicences.loaded {
-                if licences.contains(Licences.playportLicence) { fileRow("GNU General Public License", Licences.playportLicence) }
-                if licences.contains(Licences.playportException) { fileRow("Additional permission", Licences.playportException) }
+                if licences.contains(Licences.playportLicence) { fileRow("GNU 通用公共许可证（GPL）", Licences.playportLicence) }
+                if licences.contains(Licences.playportException) { fileRow("附加许可豁免条款", Licences.playportException) }
             }
-            PadSectionHeader(text: "Source code")
-            LicenceParagraph(id: "source", text: "The complete source code of this version, with every change Playport "
-                             + "makes to the projects it is built from and how to build it, is published free of charge "
-                             + "beside it, on the release it came from, as Playport-\(BundledLicences.version)-source.tar. "
-                             + "You may copy, change and share Playport under these licences.")
+            PadSectionHeader(text: "源代码")
+            LicenceParagraph(id: "source", text: "本版本的完整源代码（包含 Playport 对所依赖上游项目所做的全部修改以及构建说明）"
+                             + "均随对应发布版本免费公开提供，文件名为 Playport-\(BundledLicences.version)-source.tar。"
+                             + "你可以在上述许可证条款下自由复制、修改和分享 Playport。")
             switch BundledLicences.loaded {
             case .success(let licences):
-                PadSectionHeader(text: "Components")
+                PadSectionHeader(text: "开源组件")
                 ForEach(licences.components) { c in
                     PadRow(id: LicencePage.component(c.name).row, title: c.name, value: c.licence, accessory: .chevron,
-                           hint: "Open") {
+                           hint: "打开") {
                         AppNavigation.shared.openLicence(.component(c.name))
                     }
                 }
-                SettingsNote(text: "Each part of Playport keeps its own licence. These are the texts it carries.")
+                SettingsNote(text: "Playport 的各个组成部分均保留其原有的开源许可证。以上是随附的许可证全文。")
                 if !licences.credits.isEmpty {
-                    PadSectionHeader(text: "Credits")
+                    PadSectionHeader(text: "致谢")
                     ForEach(licences.credits.indices, id: \.self) { i in
                         LicenceParagraph(id: "credit:\(i)", text: licences.credits[i])
                     }
                 }
                 if !licences.reviewed {
-                    PadSectionHeader(text: "Not yet reviewed")
+                    PadSectionHeader(text: "待复核项")
                     ForEach(licences.open.indices, id: \.self) { i in
                         LicenceParagraph(id: "open:\(i)", text: licences.open[i])
                     }
-                    SettingsNote(text: "This build's notices have not had their release review (status: \(licences.status)).")
+                    SettingsNote(text: "此构建版本的版权声明尚未完成正式发布复核（状态：\(licences.status)）。")
                 }
             case .failure(let error):
-                PadSectionHeader(text: "Components")
-                LicenceParagraph(id: "missing", text: "This build carries no licence notices: \(String(describing: error))",
+                PadSectionHeader(text: "开源组件")
+                LicenceParagraph(id: "missing", text: "此构建版本未包含开源许可声明文件：\(String(describing: error))",
                                  warning: true)
             }
         }
     }
 
     private func fileRow(_ title: String, _ file: String) -> some View {
-        PadRow(id: LicencePage.text(file).row, title: title, accessory: .chevron, hint: "Read") {
+        PadRow(id: LicencePage.text(file).row, title: title, accessory: .chevron, hint: "阅读") {
             AppNavigation.shared.openLicence(.text(file))
         }
     }
@@ -142,12 +139,12 @@ private struct LicenceComponentPage: View {
                 SettingsNote(text: "\(component.name) · \(component.licence)")
                 SettingsInfoRow(id: "lic:head", title: component.name, value: component.licence)
                 ForEach(component.files, id: \.self) { file in
-                    PadRow(id: LicencePage.text(file).row, title: file, accessory: .chevron, hint: "Read") {
+                    PadRow(id: LicencePage.text(file).row, title: file, accessory: .chevron, hint: "阅读") {
                         AppNavigation.shared.openLicence(.text(file))
                     }
                 }
             } else {
-                LicenceParagraph(id: "head", text: "\(name) is not in this build's licences.", warning: true)
+                LicenceParagraph(id: "head", text: "此构建版本的许可证列表中未找到 \(name)。", warning: true)
             }
         }
     }
@@ -175,19 +172,19 @@ private struct LicenceTextPage: View {
                 // Keep the first row on the ring while the text loads. A spinner
                 // left only the sidebar focusable, so the ring fell onto Steam
                 // and B closed Settings instead of returning to the file list.
-                LicenceParagraph(id: "p:0", text: "Loading licence text…")
+                LicenceParagraph(id: "p:0", text: "正在加载许可证全文…")
             }
         }
         .task(id: file) {
             guard case .success(let licences) = BundledLicences.loaded else {
-                failure = "This build carries no licence notices."
+                failure = "此构建版本未包含开源许可声明文件。"
                 return
             }
             do {
                 let p = Licences.paragraphs(try licences.text(of: file))
-                if p.isEmpty { failure = "\(file) is empty." } else { paragraphs = p }
+                if p.isEmpty { failure = "\(file) 内容为空。" } else { paragraphs = p }
             } catch {
-                failure = "\(file) could not be read: \(String(describing: error))"
+                failure = "无法读取 \(file)：\(String(describing: error))"
             }
         }
     }

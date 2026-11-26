@@ -85,7 +85,7 @@ final class Downloads: ObservableObject {
         /// `1.20 GB of 5.31 GB · 12.4 MB/s`
         var detail: String? {
             guard let p = progress else { return nil }
-            return "\(ByteCount.format(p.bytesDone)) of \(ByteCount.format(p.bytesTotal))"
+            return "\(ByteCount.format(p.bytesDone)) / \(ByteCount.format(p.bytesTotal))"
                 + (phase == .downloading ? rate.map { " · " + DownloadRate.speed($0) } ?? "" : "")
         }
 
@@ -98,23 +98,23 @@ final class Downloads: ObservableObject {
         /// `about 4 min left`, while it downloads at a known speed.
         var timeLeft: String? {
             guard phase == .downloading, let r = remaining, let s = DownloadRate.seconds(remaining: r, rate: rate) else { return nil }
-            return DownloadRate.duration(s) + " left"
+            return "剩余 " + DownloadRate.duration(s)
         }
 
         /// What a running job is doing: its kind's verb, or its store's own (a Battle.net
         /// language change is not shown as an update, PLA-521).
         var verb: String {
-            BattleNet.jobVerb(record) ?? (kind == .repair ? "Repairing" : kind == .update ? "Updating" : kind == .import ? "Copying" : "Downloading")
+            BattleNet.jobVerb(record) ?? (kind == .repair ? "正在修复" : kind == .update ? "正在更新" : kind == .import ? "正在复制" : "正在下载")
         }
 
         var status: String {
             switch phase {
-            case .queued: return waitingFor ?? "Waiting"
-            case .preparing: return kind == .repair ? "Checking files…" : "Preparing…"
+            case .queued: return waitingFor ?? "等待中"
+            case .preparing: return kind == .repair ? "正在检查文件…" : "正在准备…"
             case .downloading:
                 return fraction.map { "\(verb) \(Int($0 * 100))%" } ?? verb
-            case .finishing: return "Finishing…"
-            case .paused: return "Paused"
+            case .finishing: return "正在完成…"
+            case .paused: return "已暂停"
             }
         }
     }
@@ -316,7 +316,7 @@ final class Downloads: ObservableObject {
     /// Why `job` may not start now, or nil.
     private func blocker(_ job: DownloadJob) -> String? {
         if suspended { return nil }   // the jobs say it themselves (InstallCopy.afterLaunch)
-        guard let driver = drivers[job.key.store] else { return "Waiting for \(job.key.store.label)" }
+        guard let driver = drivers[job.key.store] else { return "正在等待 \(job.key.store.label)" }
         return driver.blocker
     }
 
@@ -441,25 +441,25 @@ final class Downloads: ObservableObject {
 /// What the player is told when a download stops. A release build words it
 /// without internals (decision 0009); the dev build adds the raw error.
 enum InstallCopy {
-    static let afterLaunch = "A game has run in this session. Close Playport and reopen it to continue downloading."
-    static let launch = "Paused while a game runs."
-    static let signOut = "Paused: signed out of Steam."
+    static let afterLaunch = "本次会话已运行过游戏。请关闭并重新打开 Playport 以继续下载。"
+    static let launch = "游戏运行期间已暂停。"
+    static let signOut = "已暂停：已退出登录 Steam。"
 
     static func reason(_ error: Error, store: String = "Steam") -> String {
         let text: String
         switch error as? ClientError {
         case let .insufficientSpace(needed, available)?:
-            text = "Not enough free space: \(ByteCount.format(needed)) needed, \(ByteCount.format(available)) free."
+            text = "可用空间不足：需要 \(ByteCount.format(needed))，当前可用 \(ByteCount.format(available))。"
         case .notLoggedOn?, .noCredentials?:
-            text = "Sign in to \(store) to continue."
+            text = "请登录 \(store) 以继续。"
         case .transport?, .timeout?, .retriesExhausted?:
-            text = "\(store) can't be reached. Check the connection, then resume."
+            text = "无法连接 \(store)，请检查网络连接后继续下载。"
         case .unsafeContent?:
-            text = "Another game's folder is in the way, or the download contains a file Playport refuses."
+            text = "存在同名游戏文件夹冲突，或下载内容包含 Playport 拒绝的文件。"
         case .verificationFailed?:
-            text = "Some files could not be verified. Resume to fetch them again."
+            text = "部分文件校验失败，请继续下载以重新获取。"
         default:
-            text = "The download stopped."
+            text = "下载已停止。"
         }
         return detailed(text, error)
     }

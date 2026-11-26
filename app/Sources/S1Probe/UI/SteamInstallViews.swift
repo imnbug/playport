@@ -17,7 +17,7 @@ struct SteamInstallStatus: View {
             Text(job.status).font(.caption.bold()).foregroundStyle(.tint)
         } else if let t = library.catalog.titles.first(where: { $0.appID == game.id }) {
             let update = Self.updateAvailable(t, game.info)
-            Text(update ? "Update available" : "Installed")
+            Text(update ? "有可用更新" : "已安装")
                 .font(.caption.bold())
                 .foregroundStyle(update ? Color.orange : Color.green)
         }
@@ -36,12 +36,12 @@ struct SteamInstallStatus: View {
 /// its name and Steam's description (`classic · 1.32 (DX11)`).
 enum BranchLabel {
     static func text(_ b: Branch) -> String {
-        if b.isPublic { return "Latest (default)" }
+        if b.isPublic { return "最新版本（默认）" }
         return [b.name, b.description].compactMap { $0 }.joined(separator: " · ")
     }
 
     static func text(_ name: String?, in info: SteamAppInfo?) -> String {
         let name = name ?? Branch.publicName
-        return info?.depots.branch(name).map(text) ?? (name == Branch.publicName ? "Latest (default)" : name)
+        return info?.depots.branch(name).map(text) ?? (name == Branch.publicName ? "最新版本（默认）" : name)
     }
 }

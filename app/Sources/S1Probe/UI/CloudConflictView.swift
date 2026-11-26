@@ -67,12 +67,12 @@ final class CloudConflictSession: ObservableObject {
             let left = steam.cloud[appID]?.conflicts ?? conflicts
             if case .signedIn = steam.state {
                 if let e = steam.cloudErrors[appID] {
-                    error = "Steam Cloud could not be reached (\(e)). Try again, or decide later."
+                    error = "无法连接 Steam 云存档（\(e)）。请重试，或稍后决定。"
                 } else if !left.isEmpty {
-                    error = "\(left.count) file(s) are still in conflict. Try again, or decide later."
+                    error = "仍有 \(left.count) 个文件存在冲突。请重试，或稍后决定。"
                 }
             } else {
-                error = "Playport needs to be signed in to Steam to settle this. Try again once it is, or decide later."
+                error = "需要先登录 Steam 才能解决云存档冲突。请登录后重试，或稍后决定。"
             }
             guard error == nil else {
                 LibraryModel.log("cloud: \(titleID): not settled: \(error!)")
@@ -100,13 +100,13 @@ struct CloudConflictView: View {
             // The design's own screen, not a scrim: the page and its footer do not show through.
             ZStack { PP.background; Color(hex: 0x1E2A3F).opacity(0.35) }.ignoresSafeArea()
             VStack(alignment: .leading, spacing: 14) {
-                Text("Which \(session.name) save do you want?").font(PP.display(24)).lineLimit(2)
-                Text("This phone and Steam Cloud both changed since the last sync. The one you don't pick is kept as a backup for 30 days.")
+                Text("要保留哪一份「\(session.name)」存档？").font(PP.display(24)).lineLimit(2)
+                Text("自上次同步以来，本机与 Steam 云端的存档均发生了变动。未被选中的存档将保留备份 30 天。")
                     .font(.system(size: 13)).foregroundStyle(PP.muted).lineSpacing(2).padding(.top, -6)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 14) {
-                    card(.phone, heading: "This phone", time: session.sides.phone.newest, line: phoneLine, button: .a)
-                    card(.steam, heading: "Steam Cloud", time: session.sides.steam.newest, line: steamLine, button: .x)
+                    card(.phone, heading: "本机存档", time: session.sides.phone.newest, line: phoneLine, button: .a)
+                    card(.steam, heading: "Steam 云存档", time: session.sides.steam.newest, line: steamLine, button: .x)
                 }
                 if let e = session.error {
                     Text(e).font(.system(size: 12)).foregroundStyle(Color(hex: 0xFF9A6B))
@@ -121,7 +121,7 @@ struct CloudConflictView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    PadModalHint(button: .b, label: session.thenPlay ? "Decide later (game won't start)" : "Decide later") {
+                    PadModalHint(button: .b, label: session.thenPlay ? "稍后决定（暂不启动游戏）" : "稍后决定") {
                         session.press(.b)
                     }
                 }
@@ -135,26 +135,26 @@ struct CloudConflictView: View {
 
     private var phoneLine: String {
         let s = session.sides.phone
-        if s.files == 0 { return "No save on this phone" }
-        return session.playSeconds.map { "Played \(PlayTime.format($0)) here" } ?? files(s)
+        if s.files == 0 { return "本机暂无存档" }
+        return session.playSeconds.map { "本机已游玩 \(PlayTime.format($0))" } ?? files(s)
     }
 
     private var steamLine: String {
         let s = session.sides.steam
-        return s.files == 0 ? "Nothing on Steam yet" : files(s)
+        return s.files == 0 ? "Steam 云端暂无存档" : files(s)
     }
 
     private func files(_ s: CloudSides.Side) -> String {
-        "\(s.files) file\(s.files == 1 ? "" : "s") · \(ByteCountFormatter.string(fromByteCount: Int64(s.bytes), countStyle: .file))"
+        "\(s.files) 个文件 · \(ByteCountFormatter.string(fromByteCount: Int64(s.bytes), countStyle: .file))"
     }
 
     private func when(_ d: Date?) -> String {
         guard let d else { return "—" }
         let time = d.formatted(date: .omitted, time: .shortened)
         let cal = Calendar.current
-        if cal.isDateInToday(d) { return "Today, \(time)" }
-        if cal.isDateInYesterday(d) { return "Yesterday, \(time)" }
-        return d.formatted(.dateTime.day().month(.abbreviated)) + ", \(time)"
+        if cal.isDateInToday(d) { return "今天 \(time)" }
+        if cal.isDateInYesterday(d) { return "昨天 \(time)" }
+        return d.formatted(.dateTime.day().month(.abbreviated)) + " \(time)"
     }
 
     /// One side: the ring on the phone's (A), as the design draws it.
@@ -167,7 +167,7 @@ struct CloudConflictView: View {
                 Text(line).font(.system(size: 13)).foregroundStyle(PP.soft)
                 HStack(spacing: 6) {
                     PadGlyph(button: button)
-                    Text(busy ? "Settling with Steam…" : "Keep this one").font(.system(size: 13))
+                    Text(busy ? "正在与 Steam 同步…" : "保留此存档").font(.system(size: 13))
                     if busy { ProgressView().scaleEffect(0.6).tint(PP.text) }
                 }
                 .padding(.top, 6)

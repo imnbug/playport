@@ -38,9 +38,9 @@ public enum ControlsShow: String, Codable, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .automatic: "Automatic"
-        case .always: "Always"
-        case .never: "Never"
+        case .automatic: "自动"
+        case .always: "始终"
+        case .never: "从不"
         }
     }
 }
@@ -50,20 +50,20 @@ public enum OnScreenLayout: String, Codable, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .off: "Off"
-        case .gamepad: "Gamepad"
-        case .keyboardMouse: "Keyboard & mouse"
-        case .pointClick: "Point & click"
+        case .off: "关闭"
+        case .gamepad: "手柄"
+        case .keyboardMouse: "键盘与鼠标"
+        case .pointClick: "点按操控"
         }
     }
 
     /// The in-game menu's narrower panel: four beside "On-screen controls" in 330 pt.
     public var shortTitle: String {
         switch self {
-        case .off: "Off"
-        case .gamepad: "Pad"
-        case .keyboardMouse: "Keys"
-        case .pointClick: "Point"
+        case .off: "关闭"
+        case .gamepad: "手柄"
+        case .keyboardMouse: "键鼠"
+        case .pointClick: "点按"
         }
     }
 
@@ -71,7 +71,7 @@ public enum OnScreenLayout: String, Codable, CaseIterable, Sendable {
     /// (Off is On-screen controls › Never).
     public static let startingChoices: [OnScreenLayout?] = [nil, .gamepad, .keyboardMouse, .pointClick]
 
-    public static func startingTitle(_ l: OnScreenLayout?) -> String { l?.title ?? "Suggested for the game" }
+    public static func startingTitle(_ l: OnScreenLayout?) -> String { l?.title ?? "按游戏推荐" }
 
     /// The layout with these options (the d-pad and right stick are Gamepad's).
     public func layout(dpad: OnScreenDpad, rightStick: OnScreenRightStick) -> ControlLayout? {
@@ -90,8 +90,8 @@ public enum OnScreenDpad: String, Codable, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .off: "Off"
-        case .on: "On"
+        case .off: "关闭"
+        case .on: "开启"
         }
     }
 }
@@ -107,18 +107,18 @@ public enum OnScreenRightStick: String, Codable, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .off: "Off"
-        case .below: "Below A/B/X/Y"
-        case .above: "Above A/B/X/Y"
+        case .off: "关闭"
+        case .below: "A/B/X/Y 下方"
+        case .above: "A/B/X/Y 上方"
         }
     }
 
     /// The in-game menu's narrower panel: `Below`.
     public var shortTitle: String {
         switch self {
-        case .off: "Off"
-        case .below: "Below"
-        case .above: "Above"
+        case .off: "关闭"
+        case .below: "下方"
+        case .above: "上方"
         }
     }
 }
@@ -318,6 +318,6 @@ public struct ControlsState: Equatable, Sendable {
     /// hides it (short: "controller connected" was cut off there, touch controls 3c).
     public var summary: String {
         guard layout != .off else { return layout.title }
-        return layout.title + " · " + (visible ? ControlsOpacity.label(opacity) : "hidden")
+        return layout.title + " · " + (visible ? ControlsOpacity.label(opacity) : "已隐藏")
     }
 }

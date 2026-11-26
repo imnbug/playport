@@ -39,47 +39,47 @@ struct GameControlsOptionRows: View {
         let suggested = ControlsState.resolve(game: nil, defaults: store.defaults, controllerConnected: false,
                                               compat: entry?.controls).layout
         let compat = suggested == inherited.layout ? nil : suggested
-        PadSectionHeader(text: "Controls").id("controls")
+        PadSectionHeader(text: "操控").id("controls")
         if let entry, compat != nil {
             // What the marker means, as Graphics' row says it for launch settings (GameDetailView).
-            PadRow(id: "opt:compatControls", title: "\(OptionValue.compatMarker) Set for this game's compatibility",
-                   subtitle: entry.reason + " Your own choice on the row below wins; Y on it comes back to this.",
-                   subtitleLines: nil, style: .plain, hint: "Info") {}
+            PadRow(id: "opt:compatControls", title: "\(OptionValue.compatMarker) 已按此游戏的兼容性自动配置",
+                   subtitle: entry.reason + " 你在下方行中的手动选择优先生效；按 Y 可恢复此配置。",
+                   subtitleLines: nil, style: .plain, hint: "详情") {}
         }
-        choiceRow("opt:layout", "On-screen controls", \.layout, all: OnScreenLayout.allCases, inherited: inherited.layout,
-                  compat: compat, name: \.title, detail: "Shown while no controller is connected")
+        choiceRow("opt:layout", "屏幕触控按键", \.layout, all: OnScreenLayout.allCases, inherited: inherited.layout,
+                  compat: compat, name: \.title, detail: "未连接手柄时显示")
         // The Gamepad preset's d-pad and right stick: only while the game plays that preset itself
         // (no copy of its own, not another layout), where they change what is drawn.
         let plays = ControlsState.resolve(game: own, defaults: store.defaults, controllerConnected: false, compat: entry?.controls)
         if plays.hasGamepadOptions {
-            choiceRow("opt:dpad", "D-pad", \.dpad, all: OnScreenDpad.allCases, inherited: inherited.dpad, name: \.title,
-                      detail: "Above the left stick")
-            choiceRow("opt:rightStick", "Right stick", \.rightStick, all: OnScreenRightStick.allCases,
-                      inherited: inherited.rightStick, name: \.title, detail: "Beside A/B/X/Y")
+            choiceRow("opt:dpad", "十字键", \.dpad, all: OnScreenDpad.allCases, inherited: inherited.dpad, name: \.title,
+                      detail: "位于左摇杆上方")
+            choiceRow("opt:rightStick", "右摇杆", \.rightStick, all: OnScreenRightStick.allCases,
+                      inherited: inherited.rightStick, name: \.title, detail: "位于 A/B/X/Y 旁")
         }
         let opacity = OptionValue.of(own: own.opacity, inherited: inherited.opacity, name: ControlsOpacity.label)
-        PadRow(id: "opt:opacity", title: "Opacity", value: opacity.text, accessory: .chevron, changed: opacity.changed,
+        PadRow(id: "opt:opacity", title: "透明度", value: opacity.text, accessory: .chevron, changed: opacity.changed,
                style: .plain, reset: opacity.changed ? { set { $0.opacity = nil } } : nil) {
             PadModal.shared.picker(
-                title: "Opacity", context: "\(context) · Controls", note: Self.note,
-                options: [PadOption(id: "", label: "Default", detail: ControlsOpacity.label(inherited.opacity) + ", from Settings")]
+                title: "透明度", context: "\(context) · 操控", note: Self.note,
+                options: [PadOption(id: "", label: "默认", detail: ControlsOpacity.label(inherited.opacity) + "（来自设置）")]
                     + ControlsOpacity.steps.map { PadOption(id: String($0), label: ControlsOpacity.label($0)) },
                 selected: own.opacity.map { String(ControlsOpacity.step($0, by: 0)) } ?? "") { id in set { $0.opacity = Double(id) } }
         }
         // The layout editor (UI/LayoutEditorView.swift) over the game's art; the dot and Y for the game's own copies.
-        PadRow(id: LayoutEditorSession.gameRowID, title: "Edit on-screen layout",
-               value: own.layouts.isEmpty ? "Over the game"
-                   : "Your " + OnScreenLayout.allCases.filter { own.layouts[$0] != nil }.map(\.title).joined(separator: ", "),
-               accessory: .chevron, changed: !own.layouts.isEmpty, style: .plain, hint: "Open",
+        PadRow(id: LayoutEditorSession.gameRowID, title: "编辑屏幕触控布局",
+               value: own.layouts.isEmpty ? "在游戏画面上编辑"
+                   : "自定义：" + OnScreenLayout.allCases.filter { own.layouts[$0] != nil }.map(\.title).joined(separator: "、"),
+               accessory: .chevron, changed: !own.layouts.isEmpty, style: .plain, hint: "打开",
                reset: own.layouts.isEmpty ? nil : { set { $0.layouts = [:] } }) {
             LayoutEditorSession.shared.openOverArt(titleID: titleID, title: context)
         }
         // The Controller page (UI/ControllerMapView.swift): the game's controller map and its look speed.
         // The dot and Y for its own map or look speed; "Default ·" while the mode is Settings'.
         let ownMap = own.controllerMap != nil || own.lookSpeed != nil
-        PadRow(id: ControllerMapView.gameRowID, title: "Controller", subtitle: nil,
-               value: (own.controllerMap == nil ? "Default · " : "") + own.controllerMap(over: store.defaults).mode.title,
-               accessory: .chevron, changed: ownMap, style: .plain, hint: "Open",
+        PadRow(id: ControllerMapView.gameRowID, title: "手柄", subtitle: nil,
+               value: (own.controllerMap == nil ? "默认 · " : "") + own.controllerMap(over: store.defaults).mode.title,
+               accessory: .chevron, changed: ownMap, style: .plain, hint: "打开",
                reset: ownMap ? {
                    ControllerMapAccess.resetToDefault(.game(titleID), context: context) {
                        set { $0.controllerMap = nil; $0.lookSpeed = nil }
@@ -88,13 +88,13 @@ struct GameControlsOptionRows: View {
             navigation.gamePanels.append(.controller)
         }
         let gyro = store.gyro(titleID)
-        PadRow(id: "opt:gyro", title: "Gyro aim", value: GyroText.summary(gyro), accessory: .chevron, changed: own.gyro != nil,
-               style: .plain, hint: "Open", reset: own.gyro == nil ? nil : { set { $0.gyro = nil } }) {
+        PadRow(id: "opt:gyro", title: "陀螺仪瞄准", value: GyroText.summary(gyro), accessory: .chevron, changed: own.gyro != nil,
+               style: .plain, hint: "打开", reset: own.gyro == nil ? nil : { set { $0.gyro = nil } }) {
             navigation.gamePanels.append(.gyro)
         }
     }
 
-    static let note = "For this game, at once, in a game too."
+    static let note = "仅针对此游戏，修改立即生效（游戏中同样实时生效）。"
 
     private func set(_ change: (inout GameControls) -> Void) {
         var c = store.game(titleID)
@@ -109,12 +109,12 @@ struct GameControlsOptionRows: View {
     ) -> some View where T.RawValue == String {
         let own = store.game(titleID)[keyPath: key]
         let v = OptionValue.of(own: own, compat: compat, inherited: inherited, name: { $0[keyPath: name] })
-        let fallback = compat.map { $0[keyPath: name] + ", for this game's compatibility" } ?? inherited[keyPath: name] + ", from Settings"
+        let fallback = compat.map { $0[keyPath: name] + "（游戏兼容性推荐）" } ?? inherited[keyPath: name] + "（来自设置）"
         return PadRow(id: id, title: title, value: v.text, accessory: .chevron, changed: v.changed, style: .plain,
                       reset: v.changed ? { set { $0[keyPath: key] = nil } } : nil) {
             PadModal.shared.picker(
-                title: title, context: "\(context) · Controls", note: detail + ". " + Self.note,
-                options: [PadOption(id: "", label: "Default", detail: fallback)]
+                title: title, context: "\(context) · 操控", note: detail + "。" + Self.note,
+                options: [PadOption(id: "", label: "默认", detail: fallback)]
                     + all.map { PadOption(id: $0.rawValue, label: $0[keyPath: name]) },
                 selected: own?.rawValue ?? "") { choice in set { $0[keyPath: key] = T(rawValue: choice) } }
         }
@@ -136,9 +136,9 @@ struct GyroAimPanel: View {
         let now = store.gyro(titleID)
         let defaults = store.gyroDefaults
         VStack(alignment: .leading, spacing: 2) {
-            Text("\(context) · Controls").font(.system(size: 12)).foregroundStyle(PP.muted)
+            Text("\(context) · 操控").font(.system(size: 12)).foregroundStyle(PP.muted)
                 .padding(.horizontal, 14)
-            Text("Gyro aim").font(PP.display(22)).foregroundStyle(PP.text)
+            Text("陀螺仪瞄准").font(PP.display(22)).foregroundStyle(PP.text)
                 .padding(.horizontal, 14).padding(.bottom, 2)
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
@@ -146,7 +146,7 @@ struct GyroAimPanel: View {
                         ForEach(GyroRow.allCases.filter { $0.isShown(in: now) }, id: \.self) { row in
                             gyroRow(row, own: own, now: now, defaults: defaults)
                         }
-                        PadRow(id: "gyro:calibration", title: "Calibration", value: "Automatic · when still", style: .plain,
+                        PadRow(id: "gyro:calibration", title: "自动校准", value: "自动 · 静止时校准", style: .plain,
                                hint: "") {}
                     }
                     .padding(.bottom, 18)
@@ -168,7 +168,7 @@ struct GyroAimPanel: View {
         if row.isSwitch {
             let on = row.id(in: now) == "true"
             PadRow(id: id, title: row.title, accessory: .toggle(on), changed: changed, style: .plain,
-                   hint: on ? "Turn off" : "Turn on", reset: reset) {
+                   hint: on ? "关闭" : "开启", reset: reset) {
                 // Back to following the default when that is what it becomes.
                 let next = String(!on)
                 save(next == row.id(in: defaults) ? row.cleared(own) : row.setting(next, in: own))
@@ -180,12 +180,12 @@ struct GyroAimPanel: View {
             default: (row.text(now), nil)
             }
             PadRow(id: id, title: row.title, subtitle: text.why ?? Self.subtitle(row),
-                   value: changed ? text.value : "Default · " + text.value, accessory: .chevron, changed: changed,
+                   value: changed ? text.value : "默认 · " + text.value, accessory: .chevron, changed: changed,
                    style: .plain, reset: reset,
                    adjust: row.isNumber ? { by in save(row.setting(row.step(now, by: by), in: own)) } : nil) {
                 PadModal.shared.picker(
-                    title: row.title, context: "\(context) · Gyro aim", note: GameControlsOptionRows.note,
-                    options: [PadOption(id: "", label: "Default", detail: row.text(defaults) + ", from Settings")]
+                    title: row.title, context: "\(context) · 陀螺仪瞄准", note: GameControlsOptionRows.note,
+                    options: [PadOption(id: "", label: "默认", detail: row.text(defaults) + "（来自设置）")]
                         + row.choices.map { PadOption(id: $0.id, label: $0.label, detail: Self.detail(row, $0.id)) },
                     selected: changed ? row.choices[row.index(in: now)].id : "") { choice in
                     save(row.setting(choice.isEmpty ? nil : choice, in: own))
@@ -203,12 +203,12 @@ struct GyroAimPanel: View {
     /// The grey line under a row.
     static func subtitle(_ row: GyroRow) -> String? {
         switch row {
-        case .output: "Always on while chosen: no button to hold"
-        case .pauseButton: "Held, the aim stops (to recentre)"
-        case .sensitivity: "Left and right change it"
-        case .antiDeadZone: "Where the stick starts: past the game's own dead zone"
-        case .smoothing: "Steadies slow turns; a little delay"
-        case .turnAxis: "Player space works however you hold it"
+        case .output: "开启后持续生效，无需按住任何按键"
+        case .pauseButton: "按住时暂停陀螺仪瞄准（便于归中视角）"
+        case .sensitivity: "按左右方向键可快速调节"
+        case .antiDeadZone: "摇杆起始推力，用于跨过游戏自身的死区"
+        case .smoothing: "平稳细微转动，会带来轻微延迟"
+        case .turnAxis: "「玩家空间」适合任意握持姿势"
         default: nil
         }
     }
@@ -216,19 +216,19 @@ struct GyroAimPanel: View {
     /// A choice's grey text in the picker.
     static func detail(_ row: GyroRow, _ id: String) -> String? {
         switch (row, id) {
-        case (.output, "mouse"): "For games that aim with the mouse"
-        case (.output, "rightStick"): "For games that read only a controller"
-        case (.antiDeadZone, "0.0"): "The stick starts at rest"
-        case (.antiDeadZone, "0.27"): "XInput's dead zone: most games"
-        case (.smoothing, "auto"): "Off for a controller's gyro, Normal for the iPhone's"
-        case (.smoothing, "off"): "Every turn as it comes: no delay"
-        case (.smoothing, "light"): "Half Normal's, for a steadier hand"
-        case (.smoothing, "normal"): "Steadies a held aim; slow turns lag a little"
-        case (.source, "auto"): "A controller's gyro when it has one, else the iPhone's"
-        case (.source, "controller"): "DualSense, DualShock 4 and others with a gyro"
-        case (.turnAxis, "playerSpace"): "Turns about the world's up, however you hold it"
-        case (.turnAxis, "yaw"): "Turns about the device's own up"
-        case (.turnAxis, "roll"): "Turns like a steering wheel"
+        case (.output, "mouse"): "适合使用鼠标瞄准的游戏"
+        case (.output, "rightStick"): "适合仅支持手柄输入的游戏"
+        case (.antiDeadZone, "0.0"): "摇杆从零位开始输出"
+        case (.antiDeadZone, "0.27"): "XInput 标准死区，适用于大多数游戏"
+        case (.smoothing, "auto"): "手柄陀螺仪为关闭，iPhone 陀螺仪为标准"
+        case (.smoothing, "off"): "原样实时响应，无任何延迟"
+        case (.smoothing, "light"): "平滑强度为「标准」的一半，手感更跟手"
+        case (.smoothing, "normal"): "稳定持握瞄准，慢速移动时略有延迟"
+        case (.source, "auto"): "优先使用已连接手柄的陀螺仪，否则使用 iPhone"
+        case (.source, "controller"): "支持 DualSense、DualShock 4 等带陀螺仪的手柄"
+        case (.turnAxis, "playerSpace"): "无论如何握持，均围绕现实世界的水平方向左右转向"
+        case (.turnAxis, "yaw"): "围绕设备自身的垂直轴转向"
+        case (.turnAxis, "roll"): "像转动方向盘一样倾斜转向"
         default: nil
         }
     }
@@ -249,7 +249,7 @@ struct GyroTestArea: View {
         case .defaults: store.gyroDefaults
         }
         VStack(alignment: .leading, spacing: 8) {
-            Text("TRY IT · THE DOT IS YOUR AIM").font(.system(size: 10, weight: .semibold)).tracking(0.8)
+            Text("测试区域 · 圆点代表准星位置").font(.system(size: 10, weight: .semibold)).tracking(0.8)
                 .foregroundStyle(PP.muted)
             ZStack {
                 RoundedRectangle(cornerRadius: 14).fill(PP.background)
@@ -267,7 +267,7 @@ struct GyroTestArea: View {
                         }
                         .overlay(alignment: .bottomTrailing) {
                             // The bias learnt while still (GyroAim's calibration).
-                            Text(p.calibrated ? "● Calibrated" : "Hold still a moment to calibrate")
+                            Text(p.calibrated ? "● 已校准" : "请保持静止片刻以完成校准")
                                 .font(.system(size: 10)).foregroundStyle(p.calibrated ? PP.ok : PP.muted)
                                 .padding(8)
                         }
@@ -278,7 +278,7 @@ struct GyroTestArea: View {
                 }
             }
             .frame(maxHeight: .infinity)
-            .padItem(Self.itemID, hint: "Centre", cornerRadius: 14) { sensors.feed.centreDot() }
+            .padItem(Self.itemID, hint: "归中", cornerRadius: 14) { sensors.feed.centreDot() }
             .accessibilityIdentifier("gyro-test-area")
             Text(hint(settings)).font(.system(size: 12)).foregroundStyle(PP.muted).lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -293,15 +293,15 @@ struct GyroTestArea: View {
 
     /// Why the dot is not shown.
     private func status(_ s: GyroSettings) -> String {
-        if s.output == .off { return "Gyro aim is off. Choose Mouse or Right stick to try it." }
-        if let why = GyroText.sourceInUse(s.source, device: sensors.device(for: s)).why { return why + "." }
-        return "Starting…"
+        if s.output == .off { return "陀螺仪瞄准已关闭。选择「鼠标」或「右摇杆」即可在此测试。" }
+        if let why = GyroText.sourceInUse(s.source, device: sensors.device(for: s)).why { return why + "。" }
+        return "正在启动…"
     }
 
     private func hint(_ s: GyroSettings) -> String {
         switch s.output {
-        case .rightStick: "Turn to push the stick: the dot comes back to the middle when you stop. Tap to centre."
-        default: "Turn to move across, tilt to move up and down. Tap to centre. It calibrates itself while you hold still."
+        case .rightStick: "转动设备以推动右摇杆，停止转动后圆点会回到中心。轻点可归中。"
+        default: "左右转动控制水平移动，前后倾斜控制上下移动。轻点可归中。静止握持时会自动完成校准。"
         }
     }
 }
@@ -315,7 +315,7 @@ struct GyroDefaultsRows: View {
 
     var body: some View {
         let d = store.gyroDefaults
-        PadSectionHeader(text: "Gyro aim").id("set:gyro")
+        PadSectionHeader(text: "陀螺仪瞄准").id("set:gyro")
         ForEach(GyroRow.allCases.filter { $0.isShown(in: d) }, id: \.self) { row in
             if row.isSwitch {
                 SettingsSwitchRow(id: Self.id(row), title: row.title, subtitle: nil,
@@ -328,9 +328,9 @@ struct GyroDefaultsRows: View {
                 let labels = choices.indices.map { $0 == i ? row.text(d) : choices[$0].label }
                 let source = GyroText.sourceInUse(d.source, device: sensors.device(for: d))
                 let subtitle = switch row {
-                case .source: source.why ?? "Now: " + source.value
-                case .smoothing: "Now: " + GyroText.smoothingInUse(d.smoothing, device: sensors.device(for: d))
-                    + ". Auto is Off for a controller's gyro, Normal for the iPhone's"
+                case .source: source.why ?? "当前：" + source.value
+                case .smoothing: "当前：" + GyroText.smoothingInUse(d.smoothing, device: sensors.device(for: d))
+                    + "。「自动」在手柄陀螺仪下为关闭，在 iPhone 陀螺仪下为标准"
                 default: GyroAimPanel.subtitle(row)
                 }
                 PadValueRow(id: "set:" + Self.id(row), title: row.title, subtitle: subtitle,
@@ -339,9 +339,8 @@ struct GyroDefaultsRows: View {
                 }
             }
         }
-        SettingsNote(text: "Gyro aim turns the view as you turn the phone or a controller with a gyro, and is always on "
-                     + "while chosen. Each game can change these in its Game options › Controls › Gyro aim, which has "
-                     + "a test area, or turn it on and change its sensitivity in the in-game menu's Controls.")
+        SettingsNote(text: "陀螺仪瞄准可在你转动手机或带陀螺仪的手柄时移动视角，开启后持续生效。每款游戏都可在"
+                     + "「游戏选项 › 操控 › 陀螺仪瞄准」中单独调整（内含测试区域），也可在游戏内菜单的「操控」面板中随时开关和调节灵敏度。")
     }
 
     /// `gyroOutput`, `gyroInvertX`: the row's driver id after `set:`.

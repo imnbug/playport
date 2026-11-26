@@ -21,16 +21,16 @@ public enum QuickMenuItem: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .resume: "Resume"
-        case .controls: "Controls"
-        case .keyboard: "Touch keyboard"
-        case .text: "Type text"
-        case .screenshot: "Screenshot"
-        case .overlay: "Performance overlay"
-        case .padLayout: "Gamepad layout"
-        case .padEdit: "Edit gamepad layout"
-        case .controller: "Controller"
-        case .quit: "Quit game"
+        case .resume: "继续游戏"
+        case .controls: "操控"
+        case .keyboard: "虚拟键盘"
+        case .text: "输入文本"
+        case .screenshot: "截图"
+        case .overlay: "性能监控"
+        case .padLayout: "虚拟手柄布局"
+        case .padEdit: "编辑手柄布局"
+        case .controller: "手柄"
+        case .quit: "退出游戏"
         }
     }
 }
@@ -57,13 +57,13 @@ public enum QuickMenuControlsRow: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .layout: "On-screen controls"
-        case .dpad: "D-pad"
-        case .rightStick: "Right stick"
-        case .opacity: "Opacity"
-        case .gyro: "Gyro aim"
-        case .gyroSensitivity: "Sensitivity"
-        case .controllerMap: "Controller"
+        case .layout: "屏幕触控按键"
+        case .dpad: "十字键"
+        case .rightStick: "右摇杆"
+        case .opacity: "透明度"
+        case .gyro: "陀螺仪瞄准"
+        case .gyroSensitivity: "灵敏度"
+        case .controllerMap: "手柄"
         }
     }
 }
@@ -119,14 +119,14 @@ public struct QuickMenu: Equatable, Sendable {
 
     /// The heading above the rows: `Playing · 42 min`.
     public static func playing(seconds: TimeInterval) -> String {
-        "Playing · " + (seconds < 60 ? "just started" : PlayTime.format(seconds))
+        "游戏中 · " + (seconds < 60 ? "刚刚开始" : PlayTime.format(seconds))
     }
 
     /// The controller row's value: `Xbox · 80%`, the name alone without a battery, `None`.
     /// `scriptedPad`: the dev build's scripted pad is connected; it is no GameController pad,
     /// so it has no name of its own and is `Scripted pad` when no real one is named.
     public static func controller(name: String?, battery: Int?, scriptedPad: Bool = false) -> String {
-        guard let name else { return scriptedPad ? "Scripted pad" : "None" }
+        guard let name else { return scriptedPad ? "脚本手柄" : "无" }
         return battery.map { "\(name) · \($0)%" } ?? name
     }
 }

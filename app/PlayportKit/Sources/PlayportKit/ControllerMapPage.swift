@@ -28,18 +28,18 @@ extension ControllerMap.Mode {
     /// The page's switch and Game options' value (ControllerMapping.dc.html).
     public var title: String {
         switch self {
-        case .controller: "As a controller"
-        case .keyboardMouse: "As keyboard & mouse"
-        case .custom: "Custom"
+        case .controller: "作为手柄"
+        case .keyboardMouse: "映射为键鼠"
+        case .custom: "自定义"
         }
     }
 
     /// The in-game menu's narrower panel.
     public var shortTitle: String {
         switch self {
-        case .controller: "Pad"
-        case .keyboardMouse: "Keys & mouse"
-        case .custom: "Custom"
+        case .controller: "手柄"
+        case .keyboardMouse: "键鼠"
+        case .custom: "自定义"
         }
     }
 }
@@ -50,9 +50,9 @@ public enum ControllerMapRow: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .leftStick: "L stick"
-        case .rightStick: "R stick"
-        case .dpad: "D-pad"
+        case .leftStick: "左摇杆"
+        case .rightStick: "右摇杆"
+        case .dpad: "十字键"
         default: pad.map(ActionText.pad) ?? rawValue
         }
     }
@@ -239,11 +239,11 @@ public enum ControllerMapEdit {
         if let s = row.stick {
             let whole = isWhole(s, in: b)
             var out = [
-                ControllerMapPart(id: "whole", label: "Whole stick", detail: "Mouse look, or a pad's stick", kind: .whole, on: whole),
-                ControllerMapPart(id: "directions", label: "Four directions", detail: "A key or button each", kind: .directions, on: !whole),
+                ControllerMapPart(id: "whole", label: "整根摇杆", detail: "鼠标视角，或映射为手柄摇杆", kind: .whole, on: whole),
+                ControllerMapPart(id: "directions", label: "四个方向", detail: "每个方向分别触发按键", kind: .directions, on: !whole),
             ]
             if whole {
-                out.append(part(.control(s), "What it does"))
+                out.append(part(.control(s), "触发动作"))
             } else {
                 out += ControllerMapRow.directionOrder.map { part(.stickDirection(s, $0), $0.title) }
             }
@@ -267,11 +267,11 @@ public enum ControllerMapEdit {
     public static func pickerTitle(_ input: ControllerInput) -> String {
         let row = ControllerMapRow.row(of: input)
         let part: String = switch input {
-        case .stickDirection(_, let d): row.title + " " + d.title.lowercased()
+        case .stickDirection(_, let d): row.title + "向" + d.title
         case .control(let c) where row == .dpad: ActionText.pad(c)
         default: row.title
         }
-        return "What \(part) presses"
+        return "「\(part)」触发的动作"
     }
 }
 
@@ -307,33 +307,32 @@ public enum ControllerMapConfirm: String, Sendable {
 
     public var title: String {
         switch self {
-        case .resetAll: "Reset every input?"
-        case .copyPreset: "Edit a copy of Keyboard & mouse?"
-        case .useDefault: "Use the default controller map?"
-        case .editCopy: "Edit a copy of Keyboard & mouse?"
-        case .useCustom: "Change what this input does?"
+        case .resetAll: "重置所有按键映射？"
+        case .copyPreset: "基于「键盘与鼠标」预设编辑副本？"
+        case .useDefault: "恢复默认手柄映射？"
+        case .editCopy: "基于「键盘与鼠标」预设编辑副本？"
+        case .useCustom: "修改此按键的功能？"
         }
     }
 
     public var note: String {
         switch self {
-        case .resetAll: "Every input goes back to what Keyboard & mouse does."
-        case .copyPreset: "Custom already has your own changes."
-        case .useDefault: "This game's Custom map has your own changes. Using the default replaces them with Settings' map."
-        case .editCopy: "Keyboard & mouse is read only. Custom starts as a copy of it, and this input's editor opens."
-        case .useCustom: "As a controller, the game sees the controller as it is. Custom maps each input to a key, "
-            + "the mouse or a button; this input's editor opens."
+        case .resetAll: "所有输入都将恢复为「键盘与鼠标」预设方案。"
+        case .copyPreset: "「自定义」方案中已包含你的个人修改。"
+        case .useDefault: "此游戏的「自定义」映射包含你的修改。恢复默认后将改用「设置」中的映射方案。"
+        case .editCopy: "「键盘与鼠标」预设为只读。「自定义」将以它的副本为起点，并打开此按键的编辑器。"
+        case .useCustom: "在「作为手柄」模式下，游戏直接识别原样手柄。「自定义」可将每个输入映射为键盘按键、鼠标或手柄按键，并打开此按键的编辑器。"
         }
     }
 
     /// (id, label); the first is the default and keeps the player's table.
     public var options: [(id: String, label: String)] {
         switch self {
-        case .resetAll: [("keep", "Keep my changes"), ("reset", "Reset all to Keyboard & mouse")]
-        case .copyPreset: [("keep", "Use my Custom map"), ("reset", "Start again from Keyboard & mouse")]
-        case .useDefault: [("keep", "Keep my changes"), ("reset", "Use Settings' map")]
-        case .editCopy: [("keep", "Not now"), ("reset", "Edit a copy")]
-        case .useCustom: [("keep", "Keep As a controller"), ("custom", "Switch to Custom")]
+        case .resetAll: [("keep", "保留我的修改"), ("reset", "全部重置为「键盘与鼠标」")]
+        case .copyPreset: [("keep", "使用现有的「自定义」方案"), ("reset", "从「键盘与鼠标」重新开始")]
+        case .useDefault: [("keep", "保留我的修改"), ("reset", "使用「设置」中的默认方案")]
+        case .editCopy: [("keep", "暂不"), ("reset", "编辑副本")]
+        case .useCustom: [("keep", "保持「作为手柄」"), ("custom", "切换至「自定义」")]
         }
     }
 
@@ -372,10 +371,10 @@ public enum ControllerMapConfirm: String, Sendable {
 extension StickDirection {
     public var title: String {
         switch self {
-        case .up: "Up"
-        case .down: "Down"
-        case .left: "Left"
-        case .right: "Right"
+        case .up: "上"
+        case .down: "下"
+        case .left: "左"
+        case .right: "右"
         }
     }
 }
@@ -399,10 +398,10 @@ extension ActionText {
     public static func short(_ a: InputAction?) -> String {
         switch a {
         case nil: "–"
-        case .mouse(.left)?: "Left"
-        case .mouse(.right)?: "Right"
-        case .mouse(.middle)?: "Middle"
-        case .mouse(.move)?: "Mouse"
+        case .mouse(.left)?: "左键"
+        case .mouse(.right)?: "右键"
+        case .mouse(.middle)?: "中键"
+        case .mouse(.move)?: "鼠标"
         case .playport?: "Playport"
         default: name(a)
         }

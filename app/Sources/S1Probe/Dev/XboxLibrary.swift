@@ -19,13 +19,13 @@ import XboxClientKit
 
 enum XboxLibrary {
     /// The Xbox store's empty Library. Its last sentence is verify-ipa.py's release marker.
-    static let emptyText = "Games you own on Xbox and PC Game Pass titles appear here. Xbox is in the dev app only."
+    static let emptyText = "你在 Xbox 拥有的游戏与 PC Game Pass 游戏会显示在这里。Xbox is in the dev app only."
 
     /// What the empty Xbox store says now, signed in (signed out, the Library asks for the
     /// account itself): loading, the refresh's failure, or the empty text.
     @MainActor static var emptyMessage: String {
         let games = XboxGames.shared
-        if games.loading { return "Loading your Xbox library…" }
+        if games.loading { return "正在加载 Xbox 游戏库…" }
         return games.error ?? emptyText
     }
 
@@ -92,9 +92,9 @@ final class XboxGames: ObservableObject {
         } catch let failure as XboxSessionError {
             error = failure.description
         } catch let failure as ClientError {
-            error = "The Xbox library can't be loaded: \(failure.description)"
+            error = "无法加载 Xbox 游戏库：\(failure.description)"
         } catch {
-            self.error = "The Xbox library can't be loaded. Try again."
+            self.error = "无法加载 Xbox 游戏库，请重试。"
         }
         // Each installed copy's licence (its lapse, Dev/XboxLapse.swift), then the removals due.
         await XboxLapses.shared.refreshed()

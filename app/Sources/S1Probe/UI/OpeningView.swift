@@ -31,7 +31,7 @@ struct OpeningView: View {
         } action: { opening.center = $0 }
         .allowsHitTesting(opening.phase == .intro || opening.phase == .holding)
         .accessibilityElement()
-        .accessibilityLabel("Playport is starting")
+        .accessibilityLabel("Playport 正在启动")
     }
 }
 

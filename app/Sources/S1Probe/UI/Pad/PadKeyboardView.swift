@@ -96,8 +96,8 @@ final class PadKeyboardSession: ObservableObject {
         case .shift: "⇧"
         case .symbols: "?123"
         case .backspace: "⌫"
-        case .space: "space"
-        case .done: "Done"
+        case .space: "空格"
+        case .done: "完成"
         }
     }
 }
@@ -212,11 +212,11 @@ struct PadKeyboardView: View {
     private var footer: some View {
         HStack(spacing: 10) {
             Spacer(minLength: 0)
-            PadModalHint(button: .a, label: "Type") { session.press(.a) }
-            PadModalHint(button: .b, label: session.state.text.isEmpty ? "Close" : "Delete") { session.press(.b) }
-            PadModalHint(button: .x, label: "Space") { session.press(.x) }
+            PadModalHint(button: .a, label: "输入") { session.press(.a) }
+            PadModalHint(button: .b, label: session.state.text.isEmpty ? "关闭" : "删除") { session.press(.b) }
+            PadModalHint(button: .x, label: "空格") { session.press(.x) }
             PadModalHint(button: .y, label: "Shift") { session.press(.y) }
-            PadModalHint(button: .menu, label: "Done") { session.press(.menu) }
+            PadModalHint(button: .menu, label: "完成") { session.press(.menu) }
         }
         .padding(.horizontal, 20)
         .frame(height: 36)

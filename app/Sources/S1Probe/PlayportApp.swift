@@ -164,7 +164,7 @@ struct RootView: View {
         // or why Playport could not restart itself (UI/LaunchViews.swift, LaunchMessage).
         // A step that failed shows on the launch failure screen instead (PadModal).
         .alert(item: Binding(get: { launch.message?.step == nil ? launch.message : nil }, set: { launch.message = $0 })) { m in
-            Alert(title: Text(m.title), message: Text(m.text), dismissButton: .default(Text("OK")))
+            Alert(title: Text(m.title), message: Text(m.text), dismissButton: .default(Text("好")))
         }
     }
 }

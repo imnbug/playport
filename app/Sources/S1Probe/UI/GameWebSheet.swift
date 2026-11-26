@@ -181,16 +181,16 @@ final class GameWebSheet: ObservableObject {
             load(s.request.url, locked: false)
             return
         }
-        signInNote = "Signing in to Epic…"
+        signInNote = "正在登录 Epic…"
         Task { @MainActor in
             let code = await Self.exchangeCode()
             guard self.shown?.request == s.request else { return }
             if let code, let url = s.request.epicSignInURL(exchangeCode: code.value) {
-                signInNote = "Signed in to Epic"
+                signInNote = "已登录 Epic"
                 log("signed in to Epic for the page (exchange code fetched)")
                 load(url, locked: true)
             } else {
-                signInNote = "Not signed in to Epic"
+                signInNote = "未登录 Epic"
                 log("opened without Epic's sign-in: no exchange code")
                 load(s.request.url, locked: false)
             }
@@ -241,7 +241,7 @@ struct GameWebSheetView: View {
                             ZStack {
                                 GameWebView(serial: sheet.loadSerial)
                                 if sheet.firstLoad == nil && sheet.finishedLoads == 0 {
-                                    ProgressView(sheet.signInNote ?? "Loading…").tint(.white).foregroundStyle(.white)
+                                    ProgressView(sheet.signInNote ?? "正在加载…").tint(.white).foregroundStyle(.white)
                                 }
                             }
                         } else {
@@ -274,7 +274,7 @@ struct GameWebSheetView: View {
             if let note = sheet.signInNote {
                 Text(note).font(.footnote).foregroundStyle(.secondary)
             }
-            Button("Close") { sheet.close("Close") }
+            Button("关闭") { sheet.close("Close") }
                 .font(.body.weight(.semibold))
             Text("Ⓑ").font(.footnote).foregroundStyle(.secondary)
         }
@@ -288,14 +288,14 @@ struct GameWebSheetView: View {
         VStack(spacing: 18) {
             Spacer()
             Image(systemName: "safari").font(.system(size: 44)).foregroundStyle(.secondary)
-            Text("\(s.title) wants to open a web page").font(.title3.weight(.semibold))
+            Text("\(s.title) 想要打开网页").font(.title3.weight(.semibold))
             Text(s.request.host).font(.body.monospaced()).foregroundStyle(.secondary)
-            Text("It opens here, over the game, signed in to nothing.")
+            Text("网页将在当前游戏画面上方直接打开，不会携带任何账号登录状态。")
                 .font(.footnote).foregroundStyle(.secondary)
             HStack(spacing: 16) {
-                Button("Not now  Ⓑ") { sheet.press(.b) }
+                Button("暂不打开  Ⓑ") { sheet.press(.b) }
                     .buttonStyle(.bordered)
-                Button("Open  Ⓐ") { sheet.confirm() }
+                Button("打开  Ⓐ") { sheet.confirm() }
                     .buttonStyle(.borderedProminent)
             }
             Spacer()

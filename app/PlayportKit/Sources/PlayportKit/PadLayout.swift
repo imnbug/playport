@@ -21,13 +21,13 @@ public enum VirtualPadControl: String, Codable, CaseIterable, Sendable {
         case .leftBumper: "LB"
         case .rightBumper: "RB"
         case .rightTrigger: "RT"
-        case .back: "Back"
-        case .home: "Home"
-        case .start: "Start"
-        case .leftStick: "Left stick"
-        case .rightStick: "Right stick"
-        case .dpad: "D-pad"
-        case .face: "A B X Y"
+        case .back: "视图键"
+        case .home: "Home 键"
+        case .start: "菜单键"
+        case .leftStick: "左摇杆"
+        case .rightStick: "右摇杆"
+        case .dpad: "十字键"
+        case .face: "动作键"
         }
     }
 
@@ -165,7 +165,7 @@ public struct PadLayouts: Codable, Equatable, Sendable {
     public mutating func duplicate(_ l: PadLayout, id: String = UUID().uuidString) -> PadLayout {
         var copy = l
         copy.id = id
-        copy.name = freeName(l.name + " copy")
+        copy.name = freeName(l.name + " 副本")
         layouts.append(copy)
         return copy
     }

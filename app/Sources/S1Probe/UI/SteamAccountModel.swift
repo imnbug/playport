@@ -387,7 +387,7 @@ final class SteamAccountModel: ObservableObject {
             gamesFetchedAt = Date()
             gamesError = nil
         } catch {
-            gamesError = "Couldn't refresh your library (\(error))."
+            gamesError = "无法刷新游戏库（\(error)）。"
         }
     }
 

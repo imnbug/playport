@@ -19,7 +19,7 @@ public enum Store: String, Codable, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .local: "Local"
+        case .local: "本地导入"
         case .steam: "Steam"
         case .gog: "GOG"
         case .epic: "Epic Games"

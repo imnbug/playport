@@ -96,7 +96,7 @@ final class XboxAccount: ObservableObject {
         if let error = error as? XboxSessionError { return error.description }
         if let error = error as? XboxLicenceFailure { return error.description }
         if let error = error as? ClientError { return error.description }
-        return "Xbox couldn't be reached. Try again."
+        return "无法连接 Xbox，请重试。"
     }
 }
 
@@ -105,18 +105,18 @@ struct XboxAccountSettings: View {
     var body: some View {
         PadSectionHeader(text: "Xbox")
         switch account.state {
-        case .unknown: SettingsInfoRow(id: "xbox:status", title: "Checking…", subtitle: nil)
+        case .unknown: SettingsInfoRow(id: "xbox:status", title: "正在检查…", subtitle: nil)
         case .signedOut:
-            SettingsInfoRow(id: "xbox:status", title: "Not signed in", subtitle: account.error ?? "Your Microsoft account. Xbox is in the dev app only.")
-            PadRow(id: "set:xbox:signin", title: "Sign in to Xbox", subtitle: "On Microsoft's own sign-in page", accessory: .chevron,
-                   hint: "Sign in") { account.beginSignIn() }
+            SettingsInfoRow(id: "xbox:status", title: "未登录", subtitle: account.error ?? "你的 Microsoft 账号（仅开发版可用）。")
+            PadRow(id: "set:xbox:signin", title: "登录 Xbox", subtitle: "在 Microsoft 官方登录页面完成验证", accessory: .chevron,
+                   hint: "登录") { account.beginSignIn() }
         case .signedIn:
-            SettingsInfoRow(id: "xbox:status", title: "Signed in", subtitle: account.error ?? "Microsoft sign-in is kept in the Keychain on this phone only.")
-            PadRow(id: "set:xbox:signout", title: "Sign out", subtitle: "Deletes Playport's Xbox session, not its synthetic Windows device.",
-                   destructive: true, hint: "Sign out") {
-                PadModal.shared.picker(title: "Sign out of Xbox?", context: "Settings · Accounts",
-                    note: "Playport deletes its session secrets and stops issuing tickets. A game already signed in can keep its tickets until they expire. To end every session, use your Microsoft account's security page. The synthetic Windows device stays, so signing in again doesn't use another of the 10 Store devices.",
-                    options: [PadOption(id: "keep", label: "Stay signed in"), PadOption(id: "out", label: "Sign out")], selected: "keep") {
+            SettingsInfoRow(id: "xbox:status", title: "已登录", subtitle: account.error ?? "Microsoft 登录凭证仅保存在本机钥匙串中。")
+            PadRow(id: "set:xbox:signout", title: "退出登录", subtitle: "删除 Playport 的 Xbox 会话，但保留虚拟 Windows 设备身份。",
+                   destructive: true, hint: "退出登录") {
+                PadModal.shared.picker(title: "要退出登录 Xbox 吗？", context: "设置 · 账号",
+                    note: "Playport 将删除会话密钥并停止签发票据。已登录的游戏在现有票据过期前仍可继续使用。如需注销所有会话，请前往 Microsoft 账号安全页面。虚拟 Windows 设备身份将会保留，因此重新登录不会额外占用 Microsoft Store 的 10 台设备名额。",
+                    options: [PadOption(id: "keep", label: "保持登录"), PadOption(id: "out", label: "退出登录")], selected: "keep") {
                     if $0 == "out" { Task { await account.signOut() } }
                 }
             }
@@ -129,11 +129,11 @@ struct XboxResetDeviceSettings: View {
     @ObservedObject private var account = XboxAccount.shared
     var body: some View {
         PadSectionHeader(text: "Xbox")
-        PadRow(id: "set:xbox:resetDevice", title: "Reset Xbox device", subtitle: "Replaces the synthetic Windows device and signs out. The old device is not unlinked at Microsoft.",
-               destructive: true, hint: "Reset") {
-            PadModal.shared.picker(title: "Reset Xbox device?", context: "Settings · Developer",
-                note: "This signs out of Xbox and creates a different synthetic Windows device. Microsoft Store allows 10 linked devices. Unlink the old one at account.microsoft.com/devices/content so it doesn't keep a slot.",
-                options: [PadOption(id: "keep", label: "Keep device"), PadOption(id: "reset", label: "Reset device")], selected: "keep") {
+        PadRow(id: "set:xbox:resetDevice", title: "重置 Xbox 设备身份", subtitle: "更换虚拟 Windows 设备并退出登录，不会在 Microsoft 端解绑旧设备。",
+               destructive: true, hint: "重置") {
+            PadModal.shared.picker(title: "要重置 Xbox 设备身份吗？", context: "设置 · 开发者",
+                note: "此操作将退出登录 Xbox 并生成新的虚拟 Windows 设备。Microsoft Store 最多允许关联 10 台设备，请前往 account.microsoft.com/devices/content 解绑旧设备，以免占用名额。",
+                options: [PadOption(id: "keep", label: "保留当前设备"), PadOption(id: "reset", label: "重置设备")], selected: "keep") {
                 if $0 == "reset" { Task { await account.resetDevice() } }
             }
         }
@@ -147,17 +147,17 @@ struct XboxSignInSheet: View {
             VStack(spacing: 8) {
                 Text(XboxSignIn.passkeyNote).font(.footnote).foregroundStyle(.secondary).padding(.horizontal)
                 if let error = account.error { Text(error).font(.footnote).foregroundStyle(.orange).padding(.horizontal) }
-                if account.exchanging { ProgressView("Completing sign-in…") }
+                if account.exchanging { ProgressView("正在完成登录…") }
                 if let page = account.page {
                     XboxLoginWebView(page: page, step: account.step, done: account.received)
-                } else if account.error == nil { ProgressView("Preparing Xbox sign-in…").frame(maxHeight: .infinity) }
+                } else if account.error == nil { ProgressView("正在准备 Xbox 登录…").frame(maxHeight: .infinity) }
                 else { Spacer() }
             }
-            .navigationTitle("Sign in to Xbox")
+            .navigationTitle("登录 Xbox")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { account.signingIn = false } }
-                if account.error != nil { ToolbarItem(placement: .primaryAction) { Button("Try again") { Task { await account.prepare() } } } }
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { account.signingIn = false } }
+                if account.error != nil { ToolbarItem(placement: .primaryAction) { Button("重试") { Task { await account.prepare() } } } }
             }
             .task { await account.prepare() }
             .onAppear { AppDelegate.allowsPortrait = true }

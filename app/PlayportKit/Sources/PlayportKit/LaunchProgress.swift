@@ -103,32 +103,32 @@ public enum LaunchProgress {
     /// dependencies): which install of how many, and its seconds once it, or the game's start, runs long.
     public static func status(_ stage: LaunchStage, part: LaunchPart? = nil, elapsed: TimeInterval = 0) -> String {
         switch stage {
-        case .preparing: "Getting ready…"
-        case .jit: "Waiting for JIT…"
-        case .runtime: "Starting Windows…"
+        case .preparing: "正在准备…"
+        case .jit: "正在等待 JIT…"
+        case .runtime: "正在启动 Windows 环境…"
         case .prerequisites:
-            "Installing dependencies"
-                + (part.map { $0.count > 1 ? " (\($0.index) of \($0.count))" : "" } ?? "") + "…"
-                + (elapsed >= dependencySlow ? " \(Int(elapsed)) s" : "")
-        case .game: "Starting the game…" + (elapsed >= gameSlow ? " \(Int(elapsed)) s" : "")
-        case .drawing: "Starting the game…"
+            "正在安装运行库组件"
+                + (part.map { $0.count > 1 ? "（\($0.index)/\($0.count)）" : "" } ?? "") + "…"
+                + (elapsed >= dependencySlow ? " \(Int(elapsed)) 秒" : "")
+        case .game: "正在启动游戏…" + (elapsed >= gameSlow ? " \(Int(elapsed)) 秒" : "")
+        case .drawing: "正在启动游戏…"
         }
     }
 
     /// What the screen across Playport's restart between a title's dependencies and the game
     /// says (decisions 0084, 0094, 0095): the old process's last screen and the new one's first.
     public static func continuing(title: String) -> String {
-        "Dependencies installed. " + (title.isEmpty ? "Starting the game…" : "Starting \(title)…")
+        "运行库组件已安装。" + (title.isEmpty ? "正在启动游戏…" : "正在启动 \(title)…")
     }
 
     /// The listed steps' names.
     public static func stepName(_ stage: LaunchStage) -> String {
         switch stage {
-        case .preparing: "Getting ready"
+        case .preparing: "准备环境"
         case .jit: "JIT"
-        case .runtime: "Runtime"
-        case .prerequisites: "Dependencies"
-        case .game, .drawing: "Game"
+        case .runtime: "运行时"
+        case .prerequisites: "运行库组件"
+        case .game, .drawing: "游戏"
         }
     }
 

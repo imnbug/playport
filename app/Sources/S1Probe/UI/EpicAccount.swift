@@ -94,7 +94,7 @@ final class EpicAccount: ObservableObject, DownloadDriver {
             await loadGames()
         } catch {
             log.warn("epic", "sign-in failed: \(error)")
-            self.error = InstallCopy.detailed("Epic did not accept the sign-in. Try again.", error)
+            self.error = InstallCopy.detailed("Epic 未接受此次登录，请重试。", error)
         }
     }
 
@@ -106,7 +106,7 @@ final class EpicAccount: ObservableObject, DownloadDriver {
         games = []
         gamesFetchedAt = nil
         try? FileManager.default.removeItem(at: Self.cache)
-        downloads?.holdAll(of: .epic, .stopped("Paused: signed out of Epic Games."))
+        downloads?.holdAll(of: .epic, .stopped("已暂停：已退出登录 Epic Games。"))
         log.info("epic", "signed out")
     }
 
@@ -125,7 +125,7 @@ final class EpicAccount: ObservableObject, DownloadDriver {
             state = .signedOut
         } catch {
             log.warn("epic", "library failed: \(error)")
-            self.error = InstallCopy.detailed("Epic Games can't be reached.", error)
+            self.error = InstallCopy.detailed("无法连接 Epic Games。", error)
         }
     }
 
@@ -186,10 +186,10 @@ final class EpicAccount: ObservableObject, DownloadDriver {
     }
 
     var blocker: String? {
-        if state != .signedIn { return "Waiting for Epic Games" }
+        if state != .signedIn { return "正在等待登录 Epic Games" }
         let net = NetworkPath.shared
-        if !net.connected { return "Waiting for a connection" }
-        if !net.mayDownload { return "Waiting for Wi-Fi" }
+        if !net.connected { return "正在等待网络连接" }
+        if !net.mayDownload { return "正在等待 Wi-Fi" }
         return nil
     }
 
@@ -326,21 +326,21 @@ struct EpicSignInSheet: View {
                         Task { await account.signIn(code: code) }
                     case let .correctiveAction(what):
                         notice = what == "PRIVACY_POLICY_ACCEPTANCE"
-                            ? "Epic asks you to accept its updated privacy policy first. Accept it on the page below, then tap Try again."
-                            : "Epic asks for something on its site first (\(what)). Do it on the page below, then tap Try again."
+                            ? "Epic 要求你先同意其更新后的隐私政策。请在下方页面完成确认，然后轻点「重试」。"
+                            : "Epic 要求你先在其网站上完成一项操作（\(what)）。请在下方页面完成后，轻点「重试」。"
                     case .none:
                         break
                     }
                 }
             }
-            .navigationTitle("Sign in to Epic Games")
+            .navigationTitle("登录 Epic Games")
             .onAppear { AppDelegate.allowsPortrait = true }
             .onDisappear { AppDelegate.allowsPortrait = false }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { account.signingIn = false } }
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { account.signingIn = false } }
                 if notice != nil {
-                    ToolbarItem(placement: .primaryAction) { Button("Try again") { notice = nil; reload += 1 } }
+                    ToolbarItem(placement: .primaryAction) { Button("重试") { notice = nil; reload += 1 } }
                 }
             }
         }
@@ -418,24 +418,24 @@ struct EpicAccountSettings: View {
         PadSectionHeader(text: "Epic Games")
         switch account.state {
         case .unknown:
-            SettingsInfoRow(id: "epic:status", title: "Checking…", subtitle: nil)
+            SettingsInfoRow(id: "epic:status", title: "正在检查…", subtitle: nil)
         case .signedOut:
-            SettingsInfoRow(id: "epic:status", title: "Not signed in", subtitle: account.error ?? "Your Epic games, installed from Epic's servers.")
-            PadRow(id: "set:epic:signin", title: "Sign in to Epic Games", subtitle: "On Epic's own sign-in page", accessory: .chevron,
-                   hint: "Sign in") { account.signingIn = true }
+            SettingsInfoRow(id: "epic:status", title: "未登录", subtitle: account.error ?? "从 Epic 服务器下载并安装你的 Epic 游戏。")
+            PadRow(id: "set:epic:signin", title: "登录 Epic Games", subtitle: "在 Epic 官方登录页面完成验证", accessory: .chevron,
+                   hint: "登录") { account.signingIn = true }
         case .signedIn:
-            SettingsInfoRow(id: "epic:status", title: "Signed in", subtitle: "\(account.games.count) Windows games")
-            PadRow(id: "set:epic:refresh", title: "Refresh library",
-                   subtitle: account.error ?? account.gamesFetchedAt.map { "Fetched " + $0.formatted(.relative(presentation: .named)) },
-                   value: account.loading ? "Asking Epic…" : nil, hint: "Refresh") {
+            SettingsInfoRow(id: "epic:status", title: "已登录", subtitle: "\(account.games.count) 款 Windows 游戏")
+            PadRow(id: "set:epic:refresh", title: "刷新游戏库",
+                   subtitle: account.error ?? account.gamesFetchedAt.map { "获取于 " + $0.formatted(.relative(presentation: .named)) },
+                   value: account.loading ? "正在连接 Epic…" : nil, hint: "刷新") {
                 Task { await account.loadGames() }
             }
-            PadRow(id: "set:epic:signout", title: "Sign out", subtitle: "Installed games stay. Playport ends the session at Epic.",
-                   destructive: true, hint: "Sign out") {
+            PadRow(id: "set:epic:signout", title: "退出登录", subtitle: "已安装的游戏会保留。Playport 会在 Epic 端注销此次会话。",
+                   destructive: true, hint: "退出登录") {
                 PadModal.shared.picker(
-                    title: "Sign out of Epic Games?", context: "Settings · Accounts",
-                    note: "Installed Epic games stay and still play. Downloads from Epic pause.",
-                    options: [PadOption(id: "keep", label: "Stay signed in"), PadOption(id: "out", label: "Sign out")],
+                    title: "要退出登录 Epic Games 吗？", context: "设置 · 账号",
+                    note: "已安装的 Epic 游戏仍可保留并正常游玩，正在进行的 Epic 下载将暂停。",
+                    options: [PadOption(id: "keep", label: "保持登录"), PadOption(id: "out", label: "退出登录")],
                     selected: "keep") { if $0 == "out" { Task { await account.signOut() } } }
             }
         }
